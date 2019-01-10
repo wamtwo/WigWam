@@ -267,7 +267,7 @@ if __name__ == "__main__":
     #print(json.dumps(getBGs("christhina","azshara","eu"),sort_keys=True, indent=4))
     testp = getBGs("christhina","azshara","eu")
     cardsdict = ir.refineBGInfo(testp[1])
-    ir.createMoreBGCharts("christhina", "azshara", cardsdict)
+    #ir.createMoreBGCharts("christhina", "azshara", cardsdict)
     #check = checkBGOrder(testp)
     #print(check)
     #testdict = ir.refineBGInfo(testp)

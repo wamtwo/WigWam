@@ -15,19 +15,28 @@ from matplotlib.gridspec import GridSpec
 
 
 
-def refineBGInfo(bgdict):
+def refineBGInfo(bgdict): 
+    #reorganizes api bg data
     if bgdict["name"] != "Battlegrounds": return "Error, incorrect Data or Data Format received (refineBGInfo)"
     else:
         simpledict = {}   
-        for item in bgdict["statistics"]:
+        for item in bgdict["statistics"]: #putting relevant information into simple 1 dimensional dict
             if "highest" in item.keys(): simpledict[item["name"]] = (item["highest"], str(item["quantity"]))
             else: simpledict[item["name"]] = item["quantity"]
-        cardsdict = {}
+        
+        calctuple = calcStats(simpledict) # calculates battles/victories without EotS and estimates EotS stats
+        simpledict["Battlegrounds played (calculated)"], simpledict["Battlegrounds won (calculated)"] = calctuple[0]
+        simpledict["Eye of the Storm battles (estimated)"], simpledict["Eye of the Storm victories (estimated)"] = calctuple[1]
+        simpledict["Eye of the Storm battles deficit"], simpledict["Eye of the Storm victories deficit"] = calctuple[2]
 
+        cardsdict = {}
+        #reorganizing simpledict into dict with blocks of associated data ("cards")
         cardsdict["General"] = {"Battlegrounds played": simpledict["Battlegrounds played"],
                                 "Battlegrounds won": simpledict["Battlegrounds won"],
                                 "Battleground played the most": simpledict["Battleground played the most"][0] + " (" + simpledict["Battleground played the most"][1] + ")",
-                                "Battleground won the most": simpledict["Battleground won the most"][0] + " (" + simpledict ["Battleground won the most"][1] + ")"}
+                                "Battleground won the most": simpledict["Battleground won the most"][0] + " (" + simpledict ["Battleground won the most"][1] + ")",
+                                "Battlegrounds played (calculated)": simpledict["Battlegrounds played (calculated)"],
+                                "Battlegrounds won (calculated)": simpledict["Battlegrounds won (calculated)"]}
 
 
         cardsdict["Alterac Valley"] = {"Alterac Valley battles": simpledict["Alterac Valley battles"], 
@@ -45,7 +54,11 @@ def refineBGInfo(bgdict):
 
         cardsdict["Eye of the Storm"] = {"Eye of the Storm battles": simpledict["Eye of the Storm battles"],
                                          "Eye of the Storm victories": simpledict["Eye of the Storm victories"],
-                                         "Eye of the Storm flags captured": simpledict["Eye of the Storm flags captured"]}
+                                         "Eye of the Storm flags captured": simpledict["Eye of the Storm flags captured"],
+                                         "Eye of the Storm battles (estimated)": simpledict["Eye of the Storm battles (estimated)"],
+                                         "Eye of the Storm victories (estimated)": simpledict["Eye of the Storm victories (estimated)"],
+                                         "Eye of the Storm battles deficit": simpledict["Eye of the Storm battles deficit"],
+                                         "Eye of the Storm victories deficit": simpledict["Eye of the Storm victories deficit"]}
 
         cardsdict["Seething Shore"] = {"Seething Shore battles": simpledict["Seething Shore battles"],
                                        "Seething Shore victories": simpledict["Seething Shore victories"]}
@@ -79,7 +92,7 @@ def refineBGInfo(bgdict):
         return cardsdict
 
 
-def createBGCharts(char, realm, cardsdict):
+def createBGCharts(char, realm, cardsdict): #deprecated test function, use createMoreBGCharts(char, realm, cardsdict) instead
     filename = "figures/" + char + "_" + realm + ".jpg"
     totalGames = cardsdict["General"]["Battlegrounds played"]
     totalWins = cardsdict["General"]["Battlegrounds won"]
@@ -102,6 +115,7 @@ def createBGCharts(char, realm, cardsdict):
 
 
 def createMoreBGCharts(char, realm, cardsdict):
+    #creates pie chars from bg data (except eye of the storm -> faulty data from api)
     filename = "figures/" + char + "_" + realm + "_.svg"
     totalGames = cardsdict["General"]["Battlegrounds played"]
     totalWins = cardsdict["General"]["Battlegrounds won"]
@@ -197,6 +211,24 @@ def createMoreBGCharts(char, realm, cardsdict):
     return filename
 
 
+def calcStats(simpledict): # calculates stats by aggregating stats for each bg without EotS
+    matchlist = []
+    victorieslist = []
+
+    for key in simpledict.keys():
+        if "battles" in key and "Rated" not in key: matchlist.append(simpledict[key])
+        if "victories" in key and "Rated" not in key: victorieslist.append(simpledict[key])
+
+    matches = sum(matchlist) - simpledict["Eye of the Storm battles"]
+    victories = sum(victorieslist) - simpledict["Eye of the Storm victories"]
+
+    ceotsbattles = simpledict["Battlegrounds played"] - matches
+    ceotsvictories = simpledict["Battlegrounds won"] - victories
+
+    matchdeficit = ceotsbattles - simpledict["Eye of the Storm battles"]
+    victoriesdeficit = ceotsvictories - simpledict["Eye of the Storm victories"]
+
+    return ((matches, victories), (ceotsbattles, ceotsvictories), (matchdeficit, victoriesdeficit))
 
 
 def refineCharInfo(infodict):
