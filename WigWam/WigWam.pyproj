@@ -29,21 +29,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="bgOrder.pkl" />
-    <Content Include="static\figures\Arliden_Azshara_.jpg" />
-    <Content Include="static\figures\Beowufl_Azshara.jpg" />
-    <Content Include="static\figures\Beowufl_Azshara_.jpg" />
-    <Content Include="static\figures\Blipsy_Durotan_.jpg" />
-    <Content Include="static\figures\Christhina_Azshara.jpg" />
-    <Content Include="static\figures\christhina_azshara_.jpg" />
-    <Content Include="static\figures\Dermycilsulf_Azshara_.jpg" />
-    <Content Include="static\figures\Feylurian_Azshara_.jpg" />
-    <Content Include="static\figures\Fibonacci_Azshara_.jpg" />
-    <Content Include="static\figures\Ladonna_Azshara.jpg" />
-    <Content Include="static\figures\Ladonna_Azshara_.jpg" />
-    <Content Include="static\figures\Silvara_Azshara_.jpg" />
-    <Content Include="static\figures\Verminaardt_Azshara.jpg" />
-    <Content Include="static\figures\Wakaîshi_Azshara_.jpg" />
-    <Content Include="static\figures\Wamtwo_Aegwynn_.jpg" />
     <Content Include="Templates\base.html" />
     <Content Include="Templates\bg.html" />
     <Content Include="Templates\charselect.html" />
