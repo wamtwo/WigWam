@@ -102,7 +102,7 @@ def createBGCharts(char, realm, cardsdict):
 
 
 def createMoreBGCharts(char, realm, cardsdict):
-    filename = "figures/" + char + "_" + realm + "_.jpg"
+    filename = "figures/" + char + "_" + realm + "_.svg"
     totalGames = cardsdict["General"]["Battlegrounds played"]
     totalWins = cardsdict["General"]["Battlegrounds won"]
     colors = ["lightgreen", "lightcoral"]
