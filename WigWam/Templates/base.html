@@ -1,0 +1,18 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    {% if title %}
+    <title>{{title}} - Wam's incredibly great WoW analysis module (WigWam) </title>
+    {% else %}
+    <title> Welcome to Wam's incredibly great WoW analysis module (WigWam) </title>
+    {% endif %}
+</head>
+<body style="width:1024px; margin:auto">
+    <div><a href="/start">Select a Char</a></div>
+    <hr />
+    {% block topinfo %} {% endblock %}
+    {% block content %} {% endblock %}
+</body>
+</html>

@@ -1,0 +1,68 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>59c1538d-ef20-40d5-b4fd-286dbc095da0</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>BlizzApiFlask.py</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>WigWam</Name>
+    <RootNamespace>WigWam</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="apiforms.py" />
+    <Compile Include="BlizzApiCalls.py" />
+    <Compile Include="BlizzApiFlask.py" />
+    <Compile Include="config.py" />
+    <Compile Include="infoRefinement.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="bgOrder.pkl" />
+    <Content Include="static\figures\Arliden_Azshara_.jpg" />
+    <Content Include="static\figures\Beowufl_Azshara.jpg" />
+    <Content Include="static\figures\Beowufl_Azshara_.jpg" />
+    <Content Include="static\figures\Blipsy_Durotan_.jpg" />
+    <Content Include="static\figures\Christhina_Azshara.jpg" />
+    <Content Include="static\figures\christhina_azshara_.jpg" />
+    <Content Include="static\figures\Dermycilsulf_Azshara_.jpg" />
+    <Content Include="static\figures\Feylurian_Azshara_.jpg" />
+    <Content Include="static\figures\Fibonacci_Azshara_.jpg" />
+    <Content Include="static\figures\Ladonna_Azshara.jpg" />
+    <Content Include="static\figures\Ladonna_Azshara_.jpg" />
+    <Content Include="static\figures\Silvara_Azshara_.jpg" />
+    <Content Include="static\figures\Verminaardt_Azshara.jpg" />
+    <Content Include="static\figures\Wakaîshi_Azshara_.jpg" />
+    <Content Include="static\figures\Wamtwo_Aegwynn_.jpg" />
+    <Content Include="Templates\base.html" />
+    <Content Include="Templates\bg.html" />
+    <Content Include="Templates\charselect.html" />
+    <Content Include="Templates\index.html" />
+    <Content Include="Templates\topinfo.html" />
+    <Content Include="token.pkl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="static\" />
+    <Folder Include="static\figures\" />
+    <Folder Include="Templates\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+  <!-- Uncomment the CoreCompile target to enable the Build command in
+       Visual Studio and specify your pre- and post-build commands in
+       the BeforeBuild and AfterBuild targets below. -->
+  <!--<Target Name="CoreCompile" />-->
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+</Project>

@@ -1,0 +1,57 @@
+﻿{% extends "base.html" %}
+{% block topinfo %}
+
+<table border="0" style="border-collapse: collapse; width: 50%;">
+    <tbody>
+        <tr>
+            <td style="width: 20%;"><img src="{{ infodict["avatar"] }}" alt="" width="84" height="84" /></td>
+            <td style="width: 20%;">
+                <table border="0" style="border-collapse: collapse; width: 100%;" height="84">
+                    <tbody>
+                        <tr style="height: 28px;">
+                            <td style="width: 100%; height: 28px;"><strong>{{ infodict["name"] }}</strong></td>
+                        </tr>
+                        <tr style="height: 28px;">
+                            <td style="width: 100%; height: 28px;">{{ infodict["realm"] }}</td>
+                        </tr>
+                        <tr style="height: 28px;">
+                            <td style="width: 100%; height: 28px;">{{ infodict["level"] }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+            <td style="width: 20%;">
+                <table border="0" style="border-collapse: collapse; width: 100%;" height="84">
+                    <tbody>
+                        <tr style="height: 27px;">
+                            <td style="width: 100%; height: 28px;">{{ infodict["class"] }}</td>
+                        </tr>
+                        <tr style="height: 28px;">
+                            <td style="width: 100%; height: 28px;">{{ infodict["faction"] }}</td>
+                        </tr>
+                        <tr style="height: 28px;">
+                            <td style="width: 100%; height: 28px;">{{ infodict["race"] }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+            <td style="width: 40%;">
+                <table border="0" style="border-collapse: collapse; width: 100%;" height="84">
+                    <tbody>
+                        <tr style="height: 22px;">
+                            <td style="width: 100%; height: 28px;">{{ infodict["gender"] }}</td>
+                        </tr>
+                        <tr style="height: 22px;">
+                            <td style="width: 100%; height: 28px;">{{ infodict["battlegroup"] }}</td>
+                        </tr>
+                        <tr style="height: 26px;">
+                            <td style="width: 100%; height: 28px;">AP: {{ infodict["achievementPoints"] }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+{% endblock %}
