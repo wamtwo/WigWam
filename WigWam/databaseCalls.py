@@ -1,5 +1,6 @@
 import os
 import time
+import numpy as np
 from sqlalchemy import create_engine, Table, select, MetaData, insert, delete
 from sqlalchemy.exc import IntegrityError
 
@@ -11,7 +12,7 @@ engine = create_engine("mssql+pyodbc://" + username + ":" + password + "@wigwam.
 metadata = MetaData()
 connection = engine.connect()
 
-def writeCharNames(target_table, namelist):
+def writeCharNames(target_table, namelist): #writing every single entry with commit into DB. Low performance, high error tolerance.
     table = Table(target_table, metadata, autoload=True, autoload_with=engine)
     countrejected = 0
     starttime = time.clock()
@@ -19,7 +20,7 @@ def writeCharNames(target_table, namelist):
 
     with connection.begin() as trans:
         for index, tuple in enumerate(namelist):
-            stmt = insert(table).values(Char_Name=tuple[0], Server_Name=tuple[1])
+            stmt = insert(table).values(Char_Name=tuple[1], Server_Name=tuple[0])
             try:
                 #engine.execute(stmt)
                 connection.execution_options(autocommit=False).execute(stmt)
@@ -35,7 +36,7 @@ def writeCharNames(target_table, namelist):
     return "{} entries given. {} entries rejected.".format(len(namelist), countrejected)
 
 
-def writeCharNamesAtOnce(target_table, namelist):
+def writeCharNamesAtOnce(target_table, namelist, verbosity=False): # writing all entries at once. Higher performance, low/no error tolerance
 
     print("Writing to Database Table \"" + target_table + "\"")
 
@@ -49,68 +50,82 @@ def writeCharNamesAtOnce(target_table, namelist):
 
     for row in comparedata:
         compareset.add((row[0], row[1]))
-
     
     namelist_cleaned = []
     for tuple in namelist:
         if tuple not in compareset: namelist_cleaned.append(tuple)
         else: countrejected += 1
+  
+    if verbosity == True and len(namelist_cleaned) >= 10:
+        splitlist = np.array_split(namelist_cleaned,10)
 
-    for tuple in namelist_cleaned:
-        entries.append({"Char_Name":tuple[0], "Server_Name":tuple[1]})
-    stmt = insert(table)
+        i = 0
+        for list in splitlist:
+            for tuple in list:
+                entries.append({"Char_Name":tuple[1], "Server_Name":tuple[0]})
+            stmt = insert(table)
 
+            if len(entries) > 0:
+                try:
+                    engine.execute(stmt, entries)
+                except:
+                    print("Exception occurred")
+                    raise
+            i += 10    
+            print(" -> {}% completed".format(i), end="")
+            if i < 100: print("\r", end="")
+            else: print("")
+            entries = []
+    else:
+        for tuple in namelist_cleaned:
+            entries.append({"Char_Name":tuple[1], "Server_Name":tuple[0]})
+        stmt = insert(table)
 
-    if len(entries) > 0:
-        try:
-            engine.execute(stmt, entries)
-        except:
-            print("Exception occurred")
+        if len(entries) > 0:
+            try:
+                engine.execute(stmt, entries)
+            except:
+                print("Exception occurred")
+                raise
+            print("Completed!")
 
     elapsed = (time.clock() - starttime)
     #print("Done. \t --- \t %.2f seconds." %elapsed, end="\n\n")
     return "Done. {} Entries given. Rejections: {} \t --- \t {:.2f} seconds".format(len(namelist), countrejected, elapsed)
 
+
+
+
 def getCharNames(target_table, amount=0):
     table = Table(target_table, metadata, autoload=True, autoload_with=engine)
-    stmt = select([table.columns.Char_Name, table.columns.Server_Name])
+    stmt = select([table.columns.Server_Name, table.columns.Char_Name])
     if amount > 0: stmt = stmt.limit(amount)
     result = connection.execute(stmt).fetchall()
+    resultlist = []
+    for row in result:
+        resultlist.append((row[0], row[1]))
 
-    return result
+    return resultlist
 
 
 if __name__ == "__main__":
-    #chrlst = [("Morty", "Server1"), ("Rick", "Server1"), ("Summer", "Server1"), ("Jerry", "Server1"), ("Beth", "Server1")]
-    #chrlst = [("Winter", "Server1"), ("Spring", "Server1"), ("Summer", "Server2"), ("Autumn", "Server1"), ("Fall", "Server1"), ("Morty", "Server1"), ("Wubba", "Server1")]
-    #chrlst = [("Winter", "Server1"), ("Spring", "Server2"), ("Summer", "Server3"), ("Autumn", "Server2"), ("Fall", "Server1"), ("Morty", "Server3"), ("Wubba", "Server1")]
-    #print(writeCharNames("Server_Example", chrlst))
 
-    #testresult = getCharNames("Server_Malfurion", 1000)
-    #testresult_fixed = []
-    #for tuple in testresult:
-    #    tuple_new = (tuple[1], tuple[0])
-    #    testresult_fixed.append(tuple_new)
+    testresult = getCharNames("Server_Example", 1912)
 
-    testresult_fixed = []
-    for i in range(10000):
-        testresult_fixed.append(("Char_" + str(i), "Server1"))
+    #table = Table("Server_Malfurion", metadata, autoload=True, autoload_with=engine)   
+    #stmt = delete(table)
+    #connection.execute(stmt)
 
-
-    table = Table("Server_Malfurion_copy", metadata, autoload=True, autoload_with=engine)   
-    stmt = delete(table)
-    connection.execute(stmt)
-    print(writeCharNamesAtOnce("Server_Malfurion_copy", testresult_fixed))
+    print(writeCharNamesAtOnce("Server_Malfurion_copy", testresult, verbosity=True))
     
-    testset = []
-    for i in range(20000):
-        testset.append(("Char_" + str(i), "Server1"))
+    #testset = []
+    #for i in range(20000):
+    #    testset.append(("Char_" + str(i), "Server1"))
         
     #writeCharNames("Server_Malfurion_copy", [("Char_300", "Server1"), ("Char_600", "Server1"), ("Char_900", "Server1")])
     #print(writeCharNames("Server_Malfurion_copy", testset))
     #stmt = delete(table)
     #connection.execute(stmt)
-    print(writeCharNamesAtOnce("Server_Malfurion_copy", testresult_fixed))
-    print(writeCharNamesAtOnce("Server_Malfurion_copy", testset))
+
 
     print("done.")
