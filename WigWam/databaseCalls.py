@@ -61,16 +61,15 @@ def writeCharNamesAtOnce(target_table, namelist):
     stmt = insert(table)
 
 
-
-    with connection.begin() as trans:
+    if len(entries) > 0:
         try:
-            connection.execute(stmt, entries)
+            engine.execute(stmt, entries)
         except:
             print("Exception occurred")
 
     elapsed = (time.clock() - starttime)
-    print("Done. \t --- \t %.2f seconds." %elapsed, end="\n\n")
-    return("Done. Rejections: " + str(countrejected))
+    #print("Done. \t --- \t %.2f seconds." %elapsed, end="\n\n")
+    return "Done. {} Entries given. Rejections: {} \t --- \t {:.2f} seconds".format(len(namelist), countrejected, elapsed)
 
 def getCharNames(target_table, amount=0):
     table = Table(target_table, metadata, autoload=True, autoload_with=engine)
@@ -108,9 +107,9 @@ if __name__ == "__main__":
         testset.append(("Char_" + str(i), "Server1"))
         
     #writeCharNames("Server_Malfurion_copy", [("Char_300", "Server1"), ("Char_600", "Server1"), ("Char_900", "Server1")])
-    print(writeCharNames("Server_Malfurion_copy", testset))
-    stmt = delete(table)
-    connection.execute(stmt)
+    #print(writeCharNames("Server_Malfurion_copy", testset))
+    #stmt = delete(table)
+    #connection.execute(stmt)
     print(writeCharNamesAtOnce("Server_Malfurion_copy", testresult_fixed))
     print(writeCharNamesAtOnce("Server_Malfurion_copy", testset))
 
