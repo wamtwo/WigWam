@@ -56,8 +56,8 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False): # writing all
         if tuple not in compareset: namelist_cleaned.append(tuple)
         else: countrejected += 1
   
-    if verbosity == True and len(namelist_cleaned) >= 100:
-        splitlist = np.array_split(namelist_cleaned,100)
+    if verbosity == True and len(namelist_cleaned) >= 10:
+        splitlist = np.array_split(namelist_cleaned,10)
 
         i = 0
         for list in splitlist:
@@ -71,7 +71,7 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False): # writing all
                 except:
                     print("Exception occurred")
                     raise
-            i += 1    
+            i += 10    
             print(" -> {}% completed".format(i), end="")
             if i < 100: print("\r", end="")
             else: print("")
