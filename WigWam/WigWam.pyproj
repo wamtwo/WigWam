@@ -25,6 +25,7 @@
     <Compile Include="BlizzApiCalls.py" />
     <Compile Include="BlizzApiFlask.py" />
     <Compile Include="config.py" />
+    <Compile Include="databaseCalls.py" />
     <Compile Include="infoRefinement.py" />
   </ItemGroup>
   <ItemGroup>

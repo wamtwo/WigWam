@@ -11,6 +11,14 @@ import json
 import requests
 from sklearn.externals import joblib
 import infoRefinement as ir
+import urllib, json 
+
+import requests
+import asyncio
+import concurrent.futures
+from timeit import default_timer
+import databaseCalls as dbcalls
+
 
 
 def getApiToken():
@@ -260,13 +268,186 @@ def getClasses():
         return rdict
 
 
+def getAuctions(realm, region):
+    BlizzApiUrl = "https://eu.api.blizzard.com/wow/auction/data/" + realm
+    tokDict = joblib.load("token.pkl")
+    apiKey = tokDict["Token"]
+
+    data = {"fields": "statistics"}
+    headers = {"Content-Type":"application/json", "Authorization": "Bearer "+ apiKey}
+    resp = requests.get(BlizzApiUrl, headers=headers)
+
+    if resp.status_code == 401:
+        print(getApiToken())
+        return getAuctions(realm, region)
+    
+    else:
+        rdict = resp.json()
+        return (rdict)
+
+
+def getGuild(char,realm,region):
+    BlizzApiUrl = "https://eu.api.blizzard.com/wow/character/" + realm + "/" + char
+    tokDict = joblib.load("token.pkl")
+    apiKey = tokDict["Token"]
+
+    data = {"fields": "guild"}
+    headers = {"Content-Type":"application/json", "Authorization": "Bearer "+ apiKey}
+    resp = requests.get(BlizzApiUrl, data, headers=headers)
+    resp=resp.json()
+    if "guild" in resp:
+        return(resp["guild"]["name"],resp["guild"]["realm"])
+        
+    else:
+        return ("0","0")
+
+    if resp.status_code == 401:
+        print(getApiToken())
+        return getGuild(char, realm, region)
+
+
+def getMembers(char,realm,region):
+    BlizzApiUrl = "https://eu.api.blizzard.com/wow/guild/" + realm + "/" + char
+    tokDict = joblib.load("token.pkl")
+    apiKey = tokDict["Token"]
+
+    data = {"fields": "members"}
+    headers = {"Content-Type":"application/json", "Authorization": "Bearer "+ apiKey}
+    resp = requests.get(BlizzApiUrl, data, headers=headers)
+
+    if resp.status_code == 401:
+        print(getApiToken())
+        return getMembers(char, realm, region)
+    
+    else:    
+        rdict = resp.json()
+        if "members" in rdict:
+            rdict2=(rdict["members"])       
+            return (rdict2)
+        else:
+            print(rdict)
+
+
+def getAllChars(realm,region):
+    start = time.time()
+    print("Fetching data on ",realm,"-",region)
+    testp = getAuctions(realm,region)
+    ttt=(testp["files"][0]["url"])
+    response = urllib.request.urlopen(ttt)
+    data = json.loads(response.read())
+    
+    realmlist=[]
+    charlist=[]
+    komlist=[]
+    guildlist=[]
+    guildserverlist=[]
+   
+    for item in data["auctions"]:
+        realmlist.append(item["ownerRealm"])
+        charlist.append(item["owner"])
+  
+    komlist=(list(zip(realmlist,charlist)))
+    komlist2= list(set(map(tuple, komlist)))
+    komlist2tmp=len(komlist2)
+    guildlist=[];
+    
+    print("\tFetching all chars in auctions")
+    cou=1
+    cou2=len(komlist2)
+    workerz=50
+    with concurrent.futures.ThreadPoolExecutor (max_workers=workerz) as executor:
+
+        tasks = (executor.submit(getGuild,komlist2[i][1],komlist2[i][0],region) for i in range (0,len(komlist2)-1))
+
+        for f in concurrent.futures.as_completed(tasks):
+            print("\t" + str(cou) + "/" + str(cou2), end="")
+            print("\r", end="")
+
+            cou=cou+1
+            t=f.result()
+            if t[0]!="0":
+                guildlist.append(f.result())
+                
+ 
+    guildlist3=list(set(map(tuple,guildlist)))
+    print("\t" + str(cou) + "/" + str(cou2), end="")
+    print("  Done.")
+
+    print("\tFetching all guild members")
+    cou=1
+    cou2=len(guildlist3)
+    cou120=0
+    with concurrent.futures.ThreadPoolExecutor (max_workers=workerz) as executor:
+
+        tasks2 = (executor.submit(getMembers,guildlist3[i][0],guildlist3[i][1],region) for i in range (0,len(guildlist3)-1))
+
+        for f2 in concurrent.futures.as_completed(tasks2):
+            print("\t" + str(cou) + "/" + str(cou2), end="")
+            print("\r", end="")
+            cou=cou+1
+            if f2.result() is None:
+                print("Guild not found")
+            else:
+                t2=f2.result()
+                for j in range (0,len(t2)-1):
+                    #print(t2[j]["character"]["name"])
+                    if "realm" in t2[j]["character"]:
+                        komlist2.append((t2[j]["character"]["realm"],t2[j]["character"]["name"]))
+                        if t2[j]["character"]["level"]==120:
+                            cou120=cou120+1
+
+
+    print("\t" + str(cou) + "/" + str(cou2), end="")
+    print("  Done.")
+    komlist3= list(set(map(tuple, komlist2)))
+
+    print("\t\tAuctions: ",len(komlist))
+    print("\t\tUnique Chars in Auctions: ",komlist2tmp)
+    print("\t\tGuilds: ",len(guildlist))
+    print("\t\tChars: ",len(komlist3))
+    print("\t\tChars lvl 120 ",cou120)
+    print("\telapsed time (seconds) ",time.time() - start)
+    return komlist3
 
 if __name__ == "__main__":
+        
+   # serverlist=("Azshara","Antonidas","Blackmoore","Blackhand","Aegwynn","Thrall","Eredar","Dalvengyr","Frostmourne","Nazjatar","Zuluhed","Frostwolf","Alleria","Malfurion","Malygos","Arthas")
+
+
+    server="Malfurion"
+    out=getAllChars(server,"eu")
+    print(dbcalls.writeCharNamesAtOnce("Server_" + server, out,verbosity=True))
+
+
+    #print(dbcalls.getCharNames("Server_Malfurion"))
+    #print(dbcalls.writeCharNames("Server_Malfurion", out))
+    
+
+    #while True:
+    #    min=25
+    #    out=getAllChars("Malfurion","eu")
+    #    print(dbcalls.writeCharNamesAtOnce("Server_Malfurion", out))
+    #    for i in range (0,min*60-1):
+    #        print("Resuming in ",min*60-i," seconds with the next Server", end="")
+    #        print("\r", end="")
+    #        #print("Resuming in ",min*60-i," seconds with the next Server")
+    #        time.sleep(1)
+    #    print(" ")
+    
+    #min=5
+    #for item in serverlist:
+    #    out=getAllChars(item,"eu")
+    #    for i in range (0,min-1):
+    #        print("Resuming in ",min-i," Minutes with the next Server")
+    #        time.sleep(60)
+
+
+    #print(out)
+    #print(len(out))
+        
     #print(getApiToken())
     #testpickle()
     #print(json.dumps(getBGs("christhina","azshara","eu"),sort_keys=True, indent=4))
-    testp = getBGs("christhina","azshara","eu")
-    cardsdict = ir.refineBGInfo(testp[1])
     #ir.createMoreBGCharts("christhina", "azshara", cardsdict)
     #check = checkBGOrder(testp)
     #print(check)
