@@ -293,7 +293,7 @@ def getGuild(char,realm,region):
 
     data = {"fields": "guild"}
     headers = {"Content-Type":"application/json", "Authorization": "Bearer "+ apiKey}
-    resp = requests.get(BlizzApiUrl, data, headers=headers)
+    resp = requests.get(BlizzApiUrl, data, headers=headers, timeout=7)
     resp=resp.json()
     if "guild" in resp:
         return(resp["guild"]["name"],resp["guild"]["realm"])
@@ -313,7 +313,7 @@ def getMembers(char,realm,region):
 
     data = {"fields": "members"}
     headers = {"Content-Type":"application/json", "Authorization": "Bearer "+ apiKey}
-    resp = requests.get(BlizzApiUrl, data, headers=headers)
+    resp = requests.get(BlizzApiUrl, data, headers=headers, timeout=7)
 
     if resp.status_code == 401:
         print(getApiToken())
@@ -354,20 +354,30 @@ def getAllChars(realm,region):
     print("\tFetching all chars in auctions")
     cou=1
     cou2=len(komlist2)
-    workerz=50
+    workerz=6
+    exceptioncount = 0
+    starttime = time.clock()
     with concurrent.futures.ThreadPoolExecutor (max_workers=workerz) as executor:
 
         tasks = (executor.submit(getGuild,komlist2[i][1],komlist2[i][0],region) for i in range (0,len(komlist2)-1))
 
-        for f in concurrent.futures.as_completed(tasks):
+        for f in concurrent.futures.as_completed(tasks, timeout=600):
             print("\t" + str(cou) + "/" + str(cou2), end="")
             print("\r", end="")
 
             cou=cou+1
-            t=f.result()
-            if t[0]!="0":
-                guildlist.append(f.result())
-                
+            try:
+                t=f.result()
+            except Exception as exc:
+                print("\n {} generated an exception.".format(exc.args[0].url))
+                exceptioncount += 1
+            except: print("\nTimeout2")
+            else:
+                    if t[0]!="0":
+                        guildlist.append(f.result())
+    
+    elapsed = (time.clock() - starttime)
+    print("Exceptions: {}\t Elapsed: {:.2f} ".format(exceptioncount, elapsed))
  
     guildlist3=list(set(map(tuple,guildlist)))
     print("\t" + str(cou) + "/" + str(cou2), end="")
@@ -377,7 +387,7 @@ def getAllChars(realm,region):
     cou=1
     cou2=len(guildlist3)
     cou120=0
-    with concurrent.futures.ThreadPoolExecutor (max_workers=workerz) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workerz) as executor:
 
         tasks2 = (executor.submit(getMembers,guildlist3[i][0],guildlist3[i][1],region) for i in range (0,len(guildlist3)-1))
 
@@ -385,16 +395,20 @@ def getAllChars(realm,region):
             print("\t" + str(cou) + "/" + str(cou2), end="")
             print("\r", end="")
             cou=cou+1
-            if f2.result() is None:
-                print("Guild not found")
-            else:
-                t2=f2.result()
-                for j in range (0,len(t2)-1):
-                    #print(t2[j]["character"]["name"])
-                    if "realm" in t2[j]["character"]:
-                        komlist2.append((t2[j]["character"]["realm"],t2[j]["character"]["name"]))
-                        if t2[j]["character"]["level"]==120:
-                            cou120=cou120+1
+            try:
+                if f2.result() is None:
+                    print("Guild not found")
+                else:
+                    t2=f2.result()
+                    for j in range (0,len(t2)-1):
+                        #print(t2[j]["character"]["name"])
+                        if "realm" in t2[j]["character"]:
+                            komlist2.append((t2[j]["character"]["realm"],t2[j]["character"]["name"]))
+                            if t2[j]["character"]["level"]==120:
+                                cou120=cou120+1
+            except Exception as exc:
+                print("\n {} generated an exception.".format(exc.args[0].url))
+                exceptioncount += 1
 
 
     print("\t" + str(cou) + "/" + str(cou2), end="")
@@ -414,9 +428,9 @@ if __name__ == "__main__":
    # serverlist=("Azshara","Antonidas","Blackmoore","Blackhand","Aegwynn","Thrall","Eredar","Dalvengyr","Frostmourne","Nazjatar","Zuluhed","Frostwolf","Alleria","Malfurion","Malygos","Arthas")
 
 
-    server="Malfurion"
+    server="Blackmoore"
     out=getAllChars(server,"eu")
-    print(dbcalls.writeCharNamesAtOnce("Server_" + server, out,verbosity=True))
+    print(dbcalls.writeCharNamesAtOnce("Server_" + server, out, verbosity=True, chunks=100))
 
 
     #print(dbcalls.getCharNames("Server_Malfurion"))

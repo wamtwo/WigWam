@@ -39,6 +39,7 @@ def writeCharNames(target_table, namelist): #writing every single entry with com
 
 def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # writing all entries at once. Higher performance, low/no error tolerance
     if chunks > 1000 or chunks < 1: return "Chunksize error: Chunksize can only be between 1 and 1000"
+    if verbosity == False and chunks not in [1,10]: print("Disregarding chunk size for verbosity=false")
     print("Writing to Database Table \"" + target_table + "\"")
 
     table = Table(target_table, metadata, autoload=True, autoload_with=engine)
@@ -57,6 +58,7 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
         if tuple not in compareset: namelist_cleaned.append(tuple)
         else: countrejected += 1
   
+    if verbosity == True and len(namelist_cleaned) <= chunks: print("Too few entries for selected chunk size. Setting chunk to 1.")
     if verbosity == True and len(namelist_cleaned) >= chunks:
         splitlist = np.array_split(namelist_cleaned,chunks)
 
