@@ -7,7 +7,8 @@ from sqlalchemy.exc import IntegrityError
 
 username = os.environ.get("WIGWAMUSER")
 password = os.environ.get("WIGWAMPW")
-engine = create_engine("mssql+pyodbc://" + username + ":" + password + "@wigwam.database.windows.net/BzApiDB?driver=SQL+Server+Native+Client+11.0")
+#engine = create_engine("mssql+pyodbc://" + username + ":" + password + "@wigwam.database.windows.net/BzApiDB?driver=SQL+Server+Native+Client+11.0")
+engine = create_engine("mssql+pyodbc://" + username + ":" + password + "@127.0.0.1/BzApiDB?driver=SQL+Server+Native+Client+11.0")
 
 metadata = MetaData()
 connection = engine.connect()

@@ -355,6 +355,23 @@ def getAllChars(realm,region):
     cou=1
     cou2=len(komlist2)
     workerz=50
+    #with concurrent.futures.ThreadPoolExecutorPoolExecutor (max_workers=workerz) as executor:
+
+    #    tasks = (executor.submit(getGuild,komlist2[i][1],komlist2[i][0],region) for i in range (0,len(komlist2)-1))
+
+    #    for f in concurrent.futures.as_completed(tasks):
+    #        print("\t" + str(cou) + "/" + str(cou2), end="")
+    #        print("\r", end="")
+
+    #        cou=cou+1
+    #        try:
+    #            t=f.result()
+    #            if t[0]!="0":
+    #                guildlist.append(f.result())
+    #        except:
+    #            print("Exception")
+    
+                
     with concurrent.futures.ThreadPoolExecutor (max_workers=workerz) as executor:
 
         tasks = (executor.submit(getGuild,komlist2[i][1],komlist2[i][0],region) for i in range (0,len(komlist2)-1))
@@ -364,11 +381,14 @@ def getAllChars(realm,region):
             print("\r", end="")
 
             cou=cou+1
-            t=f.result()
-            if t[0]!="0":
-                guildlist.append(f.result())
-                
+            try:
+                t=f.result()
+                if t[0]!="0":
+                    guildlist.append(f.result())
+            except:
+                print("Exception")         
  
+
     guildlist3=list(set(map(tuple,guildlist)))
     print("\t" + str(cou) + "/" + str(cou2), end="")
     print("  Done.")
@@ -414,8 +434,10 @@ if __name__ == "__main__":
    # serverlist=("Azshara","Antonidas","Blackmoore","Blackhand","Aegwynn","Thrall","Eredar","Dalvengyr","Frostmourne","Nazjatar","Zuluhed","Frostwolf","Alleria","Malfurion","Malygos","Arthas")
 
 
-    server="Malfurion"
+    server="Blackmoore"
     out=getAllChars(server,"eu")
+    with open("file.txt", "w") as output:
+        output.write(str(out))
     print(dbcalls.writeCharNamesAtOnce("Server_" + server, out,verbosity=True))
 
 
