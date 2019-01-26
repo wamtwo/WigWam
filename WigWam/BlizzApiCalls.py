@@ -288,12 +288,13 @@ def getAuctions(realm, region):
 
 def getGuild(char,realm,region):
     BlizzApiUrl = "https://eu.api.blizzard.com/wow/character/" + realm + "/" + char
+    #BlizzApiUrl = "https://37.244.28.18/wow/character/" + realm + "/" + char
     tokDict = joblib.load("token.pkl")
     apiKey = tokDict["Token"]
 
     data = {"fields": "guild"}
-    headers = {"Content-Type":"application/json", "Authorization": "Bearer "+ apiKey}
-    resp = requests.get(BlizzApiUrl, data, headers=headers, timeout=7)
+    headers = {"Host":"eu.api.blizzard.com", "Content-Type":"application/json", "Authorization": "Bearer "+ apiKey}
+    resp = requests.get(BlizzApiUrl, data, headers=headers, timeout=30)
     resp=resp.json()
     if "guild" in resp:
         return(resp["guild"]["name"],resp["guild"]["realm"])
@@ -308,12 +309,13 @@ def getGuild(char,realm,region):
 
 def getMembers(char,realm,region):
     BlizzApiUrl = "https://eu.api.blizzard.com/wow/guild/" + realm + "/" + char
+    #BlizzApiUrl = "https://37.244.28.18/wow/guild/" + realm + "/" + char
     tokDict = joblib.load("token.pkl")
     apiKey = tokDict["Token"]
 
     data = {"fields": "members"}
-    headers = {"Content-Type":"application/json", "Authorization": "Bearer "+ apiKey}
-    resp = requests.get(BlizzApiUrl, data, headers=headers, timeout=7)
+    headers = {"Host":"eu.api.blizzard.com", "Content-Type":"application/json", "Authorization": "Bearer "+ apiKey}
+    resp = requests.get(BlizzApiUrl, data, headers=headers, timeout=30)
 
     if resp.status_code == 401:
         print(getApiToken())
