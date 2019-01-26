@@ -28,6 +28,9 @@
     <Compile Include="databaseCalls.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="dataFlow.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="infoRefinement.py" />
   </ItemGroup>
   <ItemGroup>
