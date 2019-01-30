@@ -12,7 +12,7 @@ import requests
 from sklearn.externals import joblib
 import infoRefinement as ir
 import urllib, json 
-
+from urllib.parse import quote, urlencode
 import requests
 import asyncio
 import concurrent.futures
@@ -203,7 +203,11 @@ def getBGs(char, realm, region):
 
     data = {"fields": "statistics"}
     headers = {"Content-Type":"application/json", "Authorization": "Bearer "+ apiKey}
-    resp = requests.get(BlizzApiUrl, params=data, headers=headers)
+    #resp = requests.get(BlizzApiUrl, params=data, headers=headers, timeout=10)
+    req = requests.Request("GET", BlizzApiUrl, params=data, headers=headers).prepare()
+    s = requests.Session()
+    resp = s.send(req, timeout=10)
+
 
     if resp.status_code == 401:
         print(getApiToken())

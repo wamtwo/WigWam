@@ -117,14 +117,14 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
 
 def getCharNames(target_table, amount=0):
     table = Table(target_table, metadata, autoload=True, autoload_with=engine)
-    stmt = select([table.columns.Server_Name, table.columns.Char_Name])
+    stmt = select([table.columns.Server_Name, table.columns.Char_Name, table.columns.transferred_on])
     if amount > 0: stmt = stmt.limit(amount)
     with engine.begin() as connection:
         result = connection.execute(stmt).fetchall()
     if len(result) == 0: return[("Empty", "Empty")]
     resultlist = []
     for row in result:
-        resultlist.append((row[0], row[1]))
+        resultlist.append((row[0], row[1], row[2]))
     
     return resultlist
 
@@ -152,6 +152,19 @@ def getNumberofServers():
     with engine.begin() as connection:
         result = connection.execute(stmt).fetchall()
     return [row["Server_ID"] for row in result]
+
+def getUntransferredChars(target_table, chunksize=100):
+    if chunksize > 1000 or chunksize < 1:
+        print("Error, select chunksize between 1 and 1000.")
+        return []
+    table = Table(target_table, metadata, autoload=True, autoload_with=engine)
+    stmt = select([table.columns.Server_Name, table.columns.Char_Name, table.columns.transferred_on])
+    stmt = stmt.where(table.columns.transferred_on.is_(None))
+    stmt = stmt.limit(chunksize)
+    with engine.begin() as connection:
+        result = connection.execute(stmt).fetchall()
+    return [(row["Server_Name"], row["Char_Name"], row["transferred_on"]) for row in result]
+
 
 
 if __name__ == "__main__":

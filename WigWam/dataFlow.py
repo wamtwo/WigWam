@@ -28,10 +28,33 @@ def scanAllServers(exceptions={}):
             servercount += 1
     return "Done. Scanned {} Servers.".format(servercount)
 
+def transferCharbyServerID(id, chunksize=100):
+    serverinfo = dbc.getServerbyID(id)
+    if serverinfo[0] == "error": return serverinfo[1]
+    if serverinfo[2] == True: return f"Server {serverinfo[0]} is set to \"Skip\"."
+    print(f"Searching for untransferred Chars. Chunksize set to {chunksize}")
+    server = serverinfo[0]
+
+    charlist = dbc.getUntransferredChars("Server_"+server, chunksize=chunksize)
+    if len(charlist) == 0: return "No untransferred Chars found"
+    print(f"Found {len(charlist)} untransferred Chars")
+
+    index = 1
+
+    for char in charlist:
+        print(f"fetching Char Info {index}/{len(charlist)}")
+        infodict = bac.getBGs(char[1], char[0], "eu")
+        infodict = ir.refineCharInfo(infodict)
+
+    return "Done."
 
 
 
 if __name__ == "__main__":
     #print(scanServer(18))
-    print(scanAllServers(exceptions={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,19,20,21,22,23,24,25,26,28,29,30,31,32,33,34,35,36,38,39,41,42,43,44}))
+    #print(scanAllServers())
+
+    print("getting chars")
+    transferCharbyServerID(14, chunksize=10)
+
     print("done.")
