@@ -371,7 +371,7 @@ def getAllChars(realm,region):
             try:
                 t=f.result()
             except Exception as exc:
-                print("\n {} generated an exception.".format(exc.args[0].url))
+                print("Exception {}".format(exc))
                 exceptioncount += 1
             except: print("\nTimeout2")
             else:
@@ -409,7 +409,7 @@ def getAllChars(realm,region):
                             if t2[j]["character"]["level"]==120:
                                 cou120=cou120+1
             except Exception as exc:
-                print("\n {} generated an exception.".format(exc.args[0].url))
+                print("Exception {}".format(exc))
                 exceptioncount += 1
 
 

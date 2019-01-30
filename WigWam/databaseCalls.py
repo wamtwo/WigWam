@@ -43,6 +43,8 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
     if verbosity == False and chunks not in [1,10]: print("Disregarding chunk size for verbosity=false")
     print("Writing to Database Table \"" + target_table + "\"")
 
+    if "'" in target_table: target_table = target_table.replace("'", "-")
+
     table = Table(target_table, metadata, autoload=True, autoload_with=engine)
     entries = []
     countrejected = 0
@@ -77,7 +79,6 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
                     with connection.begin() as trans:
                         try:
                             connection.execute(stmt, entries)
-                            trans.commit()
                         except IntegrityError as ier:
                             print("Integrity Error - attempting to write chunk entry for entry at the end of the process")
                             #trans.rollback()
@@ -130,11 +131,11 @@ def getCharNames(target_table, amount=0):
 
 def getServerbyID(id):
     table = Table("serverlist", metadata, autoload=True, autoload_with=engine)
-    stmt = select([table.columns.Servername, table.columns.scanned_on]).where(table.columns.Server_ID == id)
+    stmt = select([table.columns.Servername, table.columns.scanned_on, table.columns.Skip]).where(table.columns.Server_ID == id)
     with engine.begin() as connection:
         result = connection.execute(stmt).fetchall()
     if len(result) == 0: return ("Error", "No Server for id {}".format(id))
-    else: return (result[0]["Servername"], result[0]["scanned_on"])
+    else: return (result[0]["Servername"], result[0]["scanned_on"], result[0]["Skip"])
 
 
 def updateServerScanbyID(id):
@@ -155,12 +156,12 @@ def getNumberofServers():
 
 if __name__ == "__main__":
 
-    testresult = getCharNames("Server_Blackmoore", 0)
+    #testresult = getCharNames("Server_Blackmoore", 0)
 
-    table = Table("Server_Blackmoore", metadata, autoload=True, autoload_with=engine)   
+    #table = Table("Server_Blackmoore", metadata, autoload=True, autoload_with=engine)   
 
-    print("Writing to LAN DB")
-    print(writeCharNamesAtOnce("Server_Blackmoore", testresult, verbosity=True, chunks=100))
+    #print("Writing to LAN DB")
+    #print(writeCharNamesAtOnce("Server_Blackmoore", testresult, verbosity=True, chunks=100))
 
     #testset = []
     #for i in range(20000):
