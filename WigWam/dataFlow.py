@@ -1,6 +1,7 @@
 import databaseCalls as dbc
 import BlizzApiCalls as bac
 import infoRefinement as ir
+import sys
 
 
 def scanServer(id):
@@ -42,10 +43,20 @@ def transferCharbyServerID(id, chunksize=100):
     index = 1
 
     for char in charlist:
-        print(f"fetching Char Info {index}/{len(charlist)}")
-        infodict = bac.getBGs(char[1], char[0], "eu")
-        infodict = ir.refineCharInfo(infodict)
+        print(f"fetching Char Info {index}/{len(charlist)} -> {char[1]:12}", end="\r")
+        index += 1
+        infodict = bac.getBGs(char[1], char[0], "eu")[0]
 
+        if "status" in infodict:
+           print("{}: {}".format(infodict["reason"], char[1]), end="\n")
+           print("Removed Char from Table {}: {}".format("Server_"+server, dbc.removeCharfromTable("Server_"+server, char)))
+        else:
+            infodict = ir.refineCharInfo(infodict)
+            if dbc.transferChartogeneral(infodict["name"], id, infodict["class"], infodict["level"], infodict["faction"], infodict["race"]) == True:
+                if dbc.setCharasTransferred("Server_"+server, char) == True:
+                    continue
+                else: print("Error while setting Char to transferred. Char removed from player_general: {}".format(dbc.removeCharfromGeneral(char[1], id)))
+    print("")
     return "Done."
 
 
@@ -54,7 +65,11 @@ if __name__ == "__main__":
     #print(scanServer(18))
     #print(scanAllServers())
 
-    print("getting chars")
-    transferCharbyServerID(14, chunksize=10)
+    #print("getting chars")
+    transferCharbyServerID(14, chunksize=100)
+
+    #print(dbc.removeCharfromGeneral("Abarta", 14))
+
+    #testblabla = bac.getBGs("Abbam", "Malfurion", "eu")
 
     print("done.")

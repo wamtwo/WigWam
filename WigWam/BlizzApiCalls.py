@@ -197,17 +197,15 @@ def getPvP(char, realm, region):
         return rdict["statistics"]["subCategories"][9]
 
 def getBGs(char, realm, region):
+    char = quote(char)
     BlizzApiUrl = "https://eu.api.blizzard.com/wow/character/" + realm + "/" + char
     tokDict = joblib.load("token.pkl")
     apiKey = tokDict["Token"]
 
     data = {"fields": "statistics"}
     headers = {"Content-Type":"application/json", "Authorization": "Bearer "+ apiKey}
-    #resp = requests.get(BlizzApiUrl, params=data, headers=headers, timeout=10)
-    req = requests.Request("GET", BlizzApiUrl, params=data, headers=headers).prepare()
-    s = requests.Session()
-    resp = s.send(req, timeout=10)
-
+    resp = requests.get(BlizzApiUrl, params=data, headers=headers, timeout=10)
+    
 
     if resp.status_code == 401:
         print(getApiToken())
@@ -215,6 +213,7 @@ def getBGs(char, realm, region):
     
     else:
         rdict = resp.json()
+        if "status" in rdict: return (rdict, "error")
         rdict2 = rdict["statistics"]["subCategories"][9]["subCategories"][1]
         del rdict["statistics"]
         return (rdict, rdict2)

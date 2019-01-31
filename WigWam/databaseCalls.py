@@ -4,6 +4,7 @@ import numpy as np
 from sqlalchemy import create_engine, Table, select, MetaData, insert, delete, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.functions import now
+from sqlalchemy.sql import and_
 
 
 username = os.environ.get("WIGWAMUSER")
@@ -14,10 +15,12 @@ engine = create_engine("mssql+pyodbc://" + username + ":" + password + "@192.168
 metadata = MetaData()
 
 def writeCharNames(target_table, namelist): #writing every single entry with commit into DB. Low performance, high error tolerance.
+    if "'" in target_table: target_table = target_table.replace("'", "-")
     table = Table(target_table, metadata, autoload=True, autoload_with=engine)
     countrejected = 0
     starttime = time.clock()
     print("Writing to Database Table \"" + target_table + "\"")
+
 
     with engine.begin() as connection:
         for index, tuple in enumerate(namelist):
@@ -116,6 +119,7 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
 
 
 def getCharNames(target_table, amount=0):
+    if "'" in target_table: target_table = target_table.replace("'", "-")
     table = Table(target_table, metadata, autoload=True, autoload_with=engine)
     stmt = select([table.columns.Server_Name, table.columns.Char_Name, table.columns.transferred_on])
     if amount > 0: stmt = stmt.limit(amount)
@@ -154,6 +158,7 @@ def getNumberofServers():
     return [row["Server_ID"] for row in result]
 
 def getUntransferredChars(target_table, chunksize=100):
+    if "'" in target_table: target_table = target_table.replace("'", "-")
     if chunksize > 1000 or chunksize < 1:
         print("Error, select chunksize between 1 and 1000.")
         return []
@@ -165,6 +170,63 @@ def getUntransferredChars(target_table, chunksize=100):
         result = connection.execute(stmt).fetchall()
     return [(row["Server_Name"], row["Char_Name"], row["transferred_on"]) for row in result]
 
+def transferChartogeneral(name, server_id, pclass, lvl, faction, race):
+    table = Table("player_general", metadata, autoload=True, autoload_with=engine)
+    values = {"Name": name, "Server_ID":server_id, "Class": pclass, "lvl":lvl, "Faction":faction, "Race":race,}
+    stmt = insert(table)
+
+    with engine.begin() as connection:
+        try: 
+            connection.execute(stmt, values)
+            return True
+        except: return False
+
+    return "done."
+
+def setCharasTransferred(target_table, chartuple):
+    if "'" in target_table: target_table = target_table.replace("'", "-")
+    table = Table(target_table, metadata, autoload=True, autoload_with=engine)
+    stmt = update(table).values(transferred_on = now())
+    stmt = stmt.where(and_(table.columns.Char_Name == chartuple[1], table.columns.Server_Name == chartuple[0]))
+
+    with engine.begin() as connection:
+        try:
+            connection.execute(stmt)
+            return True
+        except:
+            return False
+
+    return False
+
+def removeCharfromGeneral(charname, server_id):
+    table = Table("player_general", metadata, autoload=True, autoload_with=engine)
+    stmt = delete(table)
+    stmt = stmt.where(and_(table.columns.Name == charname, table.columns.Server_ID == server_id))
+
+    with engine.begin() as connection:
+        try:
+            connection.execute(stmt)
+            return True
+        except:
+            return False
+
+    return False
+
+
+def removeCharfromTable(target_table, chartuple):
+    if "'" in target_table: target_table = target_table.replace("'", "-")
+    table = Table(target_table, metadata, autoload=True, autoload_with=engine)
+    stmt = delete(table)
+    stmt = stmt.where(and_(table.columns.Char_Name == chartuple[1], table.columns.Server_Name == chartuple[0]))
+
+    with engine.begin() as connection:
+        try:
+            connection.execute(stmt)
+            return True
+        except:
+            return False
+
+    return False
 
 
 if __name__ == "__main__":
