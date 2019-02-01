@@ -364,7 +364,7 @@ def getAllChars(realm,region):
     starttime = time.clock()
     with concurrent.futures.ThreadPoolExecutor (max_workers=workerz) as executor:
 
-        tasks = (executor.submit(getGuild,komlist2[i][1],komlist2[i][0],region) for i in range (0,len(komlist2)-1))
+        tasks = (executor.submit(getGuild,komlist2[i][1],komlist2[i][0],region) for i in range (len(komlist2)))
 
         for f in concurrent.futures.as_completed(tasks, timeout=600):
             print("\t" + str(cou) + "/" + str(cou2), end="")
@@ -394,7 +394,7 @@ def getAllChars(realm,region):
     cou120=0
     with concurrent.futures.ThreadPoolExecutor(max_workers=workerz) as executor:
 
-        tasks2 = (executor.submit(getMembers,guildlist3[i][0],guildlist3[i][1],region) for i in range (0,len(guildlist3)-1))
+        tasks2 = (executor.submit(getMembers,guildlist3[i][0],guildlist3[i][1],region) for i in range(len(guildlist3)))
 
         for f2 in concurrent.futures.as_completed(tasks2):
             print("\t" + str(cou) + "/" + str(cou2), end="")
