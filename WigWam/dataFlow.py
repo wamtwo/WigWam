@@ -2,6 +2,7 @@ import databaseCalls as dbc
 import BlizzApiCalls as bac
 import infoRefinement as ir
 import sys
+import time
 
 
 def scanServer(id):
@@ -52,12 +53,100 @@ def transferCharbyServerID(id, chunksize=100):
            print("Removed Char from Table {}: {}".format("Server_"+server, dbc.removeCharfromTable("Server_"+server, char)))
         else:
             infodict = ir.refineCharInfo(infodict)
-            if dbc.transferChartogeneral(infodict["name"], id, infodict["class"], infodict["level"], infodict["faction"], infodict["race"]) == True:
+            if dbc.transferChartogeneral(infodict["name"], infodict["realm"], id, infodict["class"], infodict["level"], infodict["faction"], infodict["race"]) == True:
                 if dbc.setCharasTransferred("Server_"+server, char) == True:
                     continue
-                else: print("Error while setting Char to transferred. Char removed from player_general: {}".format(dbc.removeCharfromGeneral(char[1], id)))
+                else: print("Error while setting Char to transferred. Char removed from player_general: {}".format(dbc.removeCharfromGeneral(char[1], char[0])))
     print("")
     return "Done."
+
+
+def bulktransferCharbyServerID(id, chunksize=100):
+    serverinfo = dbc.getServerbyID(id)
+    if serverinfo[0] == "error": return serverinfo[1]
+    if serverinfo[2] == True: return f"Server {serverinfo[0]} is set to \"Skip\"."
+    print(f"Searching for untransferred Chars. Chunksize set to {chunksize}")
+    server = serverinfo[0]
+
+    charlist = dbc.getUntransferredChars("Server_"+server, chunksize=chunksize)
+    if len(charlist) == 0: return "No untransferred Chars found"
+    print(f"Found {len(charlist)} untransferred Chars.. fetching Char Information:")
+
+    resultlist = bac.getBulkBgs(charlist)
+
+    goodlist, badlist = splitResultlist(resultlist)
+    infodictlist = []
+    
+    for infolist in goodlist:
+        infodictlist.append(ir.refineCharInfo(infolist))
+
+    print("Transferring Char Information to DB...")
+    if dbc.bulktransferChartoGeneral(infodictlist, id) == True:
+        print("Chunk written to player_general successfully. Written {} entries.".format(len(infodictlist)), end="\n\n")
+    else:
+        print("Error while writing to player_general.")
+        return "Error!"
+
+    if len(badlist) > 0:
+        delcount = 0
+        print("Removing bad entries from Server_{}".format(server))
+        for index, entry in enumerate(badlist):
+            print("Updating entry {}/{}".format(index+1, len(badlist)), end="")
+            print("\r", end="")
+            if dbc.removeCharfromTable("Server_"+server, (entry[3], entry[2])) == True: delcount += 1
+            else:
+                print("Error while deleting {} from Server_{}".format(entry[2],server))
+        print("\nDeleted {} entries".format(delcount), end="\n\n")
+
+    print("\nMarking Chars as transferred in Server_{}".format(server))
+    transresult = bulkMarkAsTransferred(infodictlist, server)
+    print(transresult[0])
+
+
+
+    return ("Done. Written {} entries into player_general, updated {} and removed {} entries from Server_{}".format(len(goodlist), transresult[1], len(badlist), server), len(charlist))
+
+def bulkMarkAsTransferred(infodictlist, server):
+    if len(infodictlist) < 1: return "List is empty"
+    errorcount = 0
+    for index, entry in enumerate(infodictlist):
+        print("Updating entry {}/{}".format(index+1, len(infodictlist)), end="")
+        print("\r", end="")
+        if dbc.setCharasTransferred("Server_"+server, (entry["realm"], entry["name"])) == True: continue
+        else:
+            print("Error marking {}, {} as transferred. Removing from player_general".format(entry["realm"], entry["name"]))
+            print("Removed: {}".format(dbc.removeCharfromGeneral(entry["name"], entry["realm"])))
+            errorcount += 1
+
+    return ("{} entries given. {} errors while updating.".format(len(infodictlist), errorcount), len(infodictlist)-errorcount)
+
+
+def transferAllfromServer(id, chunksize=500):
+    starttime = time.clock()
+    iterations = 1
+    result = bulktransferCharbyServerID(id, chunksize)
+    print(result[0], end="\n\n")
+    while result[1] == chunksize:
+        result = bulktransferCharbyServerID(id, chunksize)
+        iterations += 1
+    elapsed = (time.clock() - starttime)
+    return "Done in {} iterations. Elapsed: {:.2f} seconds".format(iterations, elapsed)
+
+
+
+def splitResultlist(resultlist):
+    if len(resultlist) < 1: return ("error", "error")
+
+    goodlist = []
+    badlist = []
+
+    for result in resultlist:
+        if result[1] == "error":
+            badlist.append(result)
+        else:
+            goodlist.append(result[0])
+
+    return (goodlist, badlist)
 
 
 
@@ -66,10 +155,15 @@ if __name__ == "__main__":
     #print(scanAllServers())
 
     #print("getting chars")
-    transferCharbyServerID(14, chunksize=100)
+    #transferCharbyServerID(14, chunksize=100)
 
     #print(dbc.removeCharfromGeneral("Abarta", 14))
 
     #testblabla = bac.getBGs("Abbam", "Malfurion", "eu")
+
+    #print(bulktransferCharbyServerID(14, chunksize=500))
+
+    print(transferAllfromServer(14, 1000))
+
 
     print("done.")

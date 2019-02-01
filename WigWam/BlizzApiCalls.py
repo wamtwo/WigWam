@@ -213,7 +213,7 @@ def getBGs(char, realm, region):
     
     else:
         rdict = resp.json()
-        if "status" in rdict: return (rdict, "error")
+        if "status" in rdict: return (rdict, "error", char, realm)
         rdict2 = rdict["statistics"]["subCategories"][9]["subCategories"][1]
         del rdict["statistics"]
         return (rdict, rdict2)
@@ -428,6 +428,40 @@ def getAllChars(realm,region):
     print("\telapsed time (seconds) ",time.time() - start)
     return komlist3
 
+
+def getBulkBgs(charlist):
+    resultlist = []
+    workerz = 6
+
+    starttime = time.clock()
+    count = 1
+    exceptioncount = 0
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workerz) as executor:
+        
+        task = (executor.submit(getBGs, charlist[i][1], charlist[i][0], "eu") for i in range(len(charlist)))
+
+        for future in concurrent.futures.as_completed(task):
+            print("\t" + str(count) + "/" + str(len(charlist)), end="")
+            print("\r", end="")
+            count += 1
+            try:
+                result = future.result()
+            except Exception as exc:
+                print("Exception {}".format(exc))
+                exceptioncount += 1
+            except: print("\nTimeout")
+            else:
+                resultlist.append(result)
+    
+    elapsed = (time.clock() - starttime)
+    print("Exceptions: {}\t Elapsed: {:.2f} ".format(exceptioncount, elapsed))
+
+    return resultlist
+
+
+
+
 if __name__ == "__main__":
         
    # serverlist=("Azshara","Antonidas","Blackmoore","Blackhand","Aegwynn","Thrall","Eredar","Dalvengyr","Frostmourne","Nazjatar","Zuluhed","Frostwolf","Alleria","Malfurion","Malygos","Arthas")
@@ -473,3 +507,5 @@ if __name__ == "__main__":
     #testdict = ir.refineBGInfo(testp)
     #print(testdict)
     #print(json.dumps(getClasses(), sort_keys=True, indent=4))
+
+

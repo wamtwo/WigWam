@@ -66,7 +66,7 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
 
     ierrlist = []
   
-    with engine.begin() as connection:
+    with engine.execution_options(autocommit=False).begin() as connection:
 
         if verbosity == True and len(namelist_cleaned) <= chunks: print("Too few entries for selected chunk size. Setting chunk to 1.")
         if verbosity == True and len(namelist_cleaned) >= chunks:
@@ -79,7 +79,7 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
                 stmt = insert(table)
 
                 if len(entries) > 0:
-                    with connection.begin() as trans:
+                    with connection.execution_options(autocommit=False).begin() as trans:
                         try:
                             connection.execute(stmt, entries)
                         except IntegrityError as ier:
@@ -170,9 +170,9 @@ def getUntransferredChars(target_table, chunksize=100):
         result = connection.execute(stmt).fetchall()
     return [(row["Server_Name"], row["Char_Name"], row["transferred_on"]) for row in result]
 
-def transferChartogeneral(name, server_id, pclass, lvl, faction, race):
+def transferChartogeneral(name, realm, server_id, pclass, lvl, faction, race):
     table = Table("player_general", metadata, autoload=True, autoload_with=engine)
-    values = {"Name": name, "Server_ID":server_id, "Class": pclass, "lvl":lvl, "Faction":faction, "Race":race,}
+    values = {"Name": name, "Server_Name":realm, "Server_ID":server_id, "Class": pclass, "lvl":lvl, "Faction":faction, "Race":race,}
     stmt = insert(table)
 
     with engine.begin() as connection:
@@ -198,10 +198,10 @@ def setCharasTransferred(target_table, chartuple):
 
     return False
 
-def removeCharfromGeneral(charname, server_id):
+def removeCharfromGeneral(charname, server_name):
     table = Table("player_general", metadata, autoload=True, autoload_with=engine)
     stmt = delete(table)
-    stmt = stmt.where(and_(table.columns.Name == charname, table.columns.Server_ID == server_id))
+    stmt = stmt.where(and_(table.columns.Name == charname, table.colums.Server_Name == server_name))
 
     with engine.begin() as connection:
         try:
@@ -227,6 +227,28 @@ def removeCharfromTable(target_table, chartuple):
             return False
 
     return False
+
+def bulktransferChartoGeneral(infodictlist, id):
+    print("Writing to Database Table \"player_general\"")
+    table = Table("player_general", metadata, autoload=True, autoload_with=engine)
+    values = []
+
+    for infodict in infodictlist:
+        values.append({"Name": infodict["name"], "Server_Name":infodict["realm"], "Server_ID":id, "Class": infodict["class"],
+                      "lvl":infodict["level"], "Faction":infodict["faction"], "Race":infodict["race"]})
+
+    stmt = insert(table)
+
+    with engine.execution_options(autocommit=False).begin() as connection:
+        try: 
+            connection.execute(stmt, values)
+            return True
+        except:
+            print("Exception occurred")
+            return False
+
+    return False
+
 
 
 if __name__ == "__main__":
