@@ -80,12 +80,13 @@ def bulktransferCharbyServerID(id, chunksize=100):
     for infolist in goodlist:
         infodictlist.append(ir.refineCharInfo(infolist))
 
-    print("Transferring Char Information to DB...")
-    if dbc.bulktransferChartoGeneral(infodictlist, id) == True:
-        print("Chunk written to player_general successfully. Written {} entries.".format(len(infodictlist)), end="\n\n")
-    else:
-        print("Error while writing to player_general.")
-        return ("Error!",0)
+    if len(infodictlist) > 0:
+        print("Transferring Char Information to DB...")
+        if dbc.bulktransferChartoGeneral(infodictlist, id) == True:
+            print("Chunk written to player_general successfully. Written {} entries.".format(len(infodictlist)), end="\n\n")
+        else:
+            print("Error while writing to player_general.")
+            return ("Error!",0)
 
     if len(badlist) > 0:
         delcount = 0
