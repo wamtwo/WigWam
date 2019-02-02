@@ -108,7 +108,7 @@ def bulktransferCharbyServerID(id, chunksize=100):
     return ("Done. Written {} entries into player_general, updated {} and removed {} entries from Server_{}".format(len(goodlist), transresult[1], len(badlist), server), len(charlist))
 
 def bulkMarkAsTransferred(infodictlist, server):
-    if len(infodictlist) < 1: return "List is empty"
+    if len(infodictlist) < 1: return ("List is empty", 0)
     errorcount = 0
     for index, entry in enumerate(infodictlist):
         print("Updating entry {}/{}".format(index+1, len(infodictlist)), end="")
