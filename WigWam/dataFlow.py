@@ -123,12 +123,15 @@ def bulkMarkAsTransferred(infodictlist, server):
 
 
 def transferAllfromServer(id, chunksize=500):
+    print(f"Attempting to transfer all Chars from Server ID {id}. Chunksize set to {chunksize}")
     starttime = time.clock()
     iterations = 1
-    result = bulktransferCharbyServerID(id, chunksize)
-    print(result[0], end="\n\n")
-    while result[1] == chunksize:
+    while True:
+        print("\n\n ################################")
+        print(f"\nStarting Iteration {iterations}.")
         result = bulktransferCharbyServerID(id, chunksize)
+        print(result[0])
+        if result[1] < chunksize: break
         iterations += 1
     elapsed = (time.clock() - starttime)
     return "Done in {} iterations. Elapsed: {:.2f} seconds".format(iterations, elapsed)
@@ -164,7 +167,7 @@ if __name__ == "__main__":
 
     #print(bulktransferCharbyServerID(14, chunksize=500))
 
-    print(transferAllfromServer(14, 1000))
+    print(transferAllfromServer(2, 1000))
 
 
     print("done.")

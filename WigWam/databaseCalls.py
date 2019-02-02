@@ -221,7 +221,7 @@ def removeCharfromTable(target_table, chartuple):
 
     with engine.begin() as connection:
         try:
-            result = connection.execute(stmt)
+            connection.execute(stmt)
             return True
         except:
             return False
