@@ -197,8 +197,7 @@ def getPvP(char, realm, region):
         return rdict["statistics"]["subCategories"][9]
 
 def getBGs(char, realm, region):
-    char = quote(char)
-    BlizzApiUrl = "https://eu.api.blizzard.com/wow/character/" + realm + "/" + char
+    BlizzApiUrl = "https://eu.api.blizzard.com/wow/character/" + realm + "/" + quote(char)
     tokDict = joblib.load("token.pkl")
     apiKey = tokDict["Token"]
 
@@ -214,8 +213,13 @@ def getBGs(char, realm, region):
     else:
         rdict = resp.json()
         if "status" in rdict: return (rdict, "error", char, realm)
+        elif len(rdict) == 0: return (rdict, "error", char, realm)
+        elif rdict["name"] != char: 
+            print("Charname mismatch! {} <-> {}".format(rdict["name"], char))
+            return (rdict, "error", char, realm)
         rdict2 = rdict["statistics"]["subCategories"][9]["subCategories"][1]
         del rdict["statistics"]
+
         return (rdict, rdict2)
 
 def checkBGOrder(dict):

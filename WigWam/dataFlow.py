@@ -63,13 +63,13 @@ def transferCharbyServerID(id, chunksize=100):
 
 def bulktransferCharbyServerID(id, chunksize=100):
     serverinfo = dbc.getServerbyID(id)
-    if serverinfo[0] == "error": return serverinfo[1]
-    if serverinfo[2] == True: return f"Server {serverinfo[0]} is set to \"Skip\"."
+    if serverinfo[0] == "error": return (serverinfo[1], 0)
+    if serverinfo[2] == True: return (f"Server {serverinfo[0]} is set to \"Skip\".", 0)
     print(f"Searching for untransferred Chars. Chunksize set to {chunksize}")
     server = serverinfo[0]
 
     charlist = dbc.getUntransferredChars("Server_"+server, chunksize=chunksize)
-    if len(charlist) == 0: return "No untransferred Chars found"
+    if len(charlist) == 0: return ("No untransferred Chars found", 0)
     print(f"Found {len(charlist)} untransferred Chars.. fetching Char Information:")
 
     resultlist = bac.getBulkBgs(charlist)
@@ -85,7 +85,7 @@ def bulktransferCharbyServerID(id, chunksize=100):
         print("Chunk written to player_general successfully. Written {} entries.".format(len(infodictlist)), end="\n\n")
     else:
         print("Error while writing to player_general.")
-        return "Error!"
+        return ("Error!",0)
 
     if len(badlist) > 0:
         delcount = 0
