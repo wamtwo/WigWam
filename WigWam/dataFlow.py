@@ -153,6 +153,19 @@ def splitResultlist(resultlist):
     return (goodlist, badlist)
 
 
+def transferAllfromAllServers(exceptions={}):
+    serverIDs = dbc.getNumberofServers()
+    servercount = 0
+
+    for id in serverIDs:
+        if id in exceptions: print(f"Skipping Server ID {id}")
+        else:
+            print(f"ServerID {id} von {len(serverIDs)}")
+            print(transferAllfromServer(id,1000))
+            print("\n\n ############## \n\n")
+            servercount += 1
+    return "Done. Scanned {} Servers.".format(servercount)
+
 
 if __name__ == "__main__":
     #print(scanServer(18))

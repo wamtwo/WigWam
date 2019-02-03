@@ -209,6 +209,10 @@ def getBGs(char, realm, region):
     if resp.status_code == 401:
         print(getApiToken())
         return getBGs(char, realm, region)
+
+    elif resp.status_code == 500:
+        print(f"Api response for {realm}, {char}: Internal Server Error.")
+        return (0, "error", char, realm)
     
     else:
         rdict = resp.json()
@@ -471,9 +475,11 @@ if __name__ == "__main__":
    # serverlist=("Azshara","Antonidas","Blackmoore","Blackhand","Aegwynn","Thrall","Eredar","Dalvengyr","Frostmourne","Nazjatar","Zuluhed","Frostwolf","Alleria","Malfurion","Malygos","Arthas")
 
 
-    server="Blackmoore"
-    out=getAllChars(server,"eu")
-    print(dbcalls.writeCharNamesAtOnce("Server_" + server, out, verbosity=True, chunks=100))
+    #server="Blackmoore"
+    #out=getAllChars(server,"eu")
+    #print(dbcalls.writeCharNamesAtOnce("Server_" + server, out, verbosity=True, chunks=100))
+
+    print(getBGs("hyperzx", "aegwynn", "eu"))
 
 
     #print(dbcalls.getCharNames("Server_Malfurion"))
