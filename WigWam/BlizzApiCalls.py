@@ -227,7 +227,7 @@ def getBGs(char, realm, region):
         rdict2 = rdict["statistics"]["subCategories"][9]["subCategories"][1]
         del rdict["statistics"]
 
-        rdict["name"], rdict["realm"] = ir.refineCharandRealm(rdict["char"], rdict["realm"])
+        rdict["name"], rdict["realm"] = ir.refineCharandRealm(rdict["name"], rdict["realm"])
 
         return (rdict, rdict2)
 
@@ -480,11 +480,11 @@ if __name__ == "__main__":
    # serverlist=("Azshara","Antonidas","Blackmoore","Blackhand","Aegwynn","Thrall","Eredar","Dalvengyr","Frostmourne","Nazjatar","Zuluhed","Frostwolf","Alleria","Malfurion","Malygos","Arthas")
 
 
-    #server="Blackmoore"
-    #out=getAllChars(server,"eu")
+    server="Blackmoore"
+    out=getAllChars(server,"eu")
     #print(dbcalls.writeCharNamesAtOnce("Server_" + server, out, verbosity=True, chunks=100))
 
-    print(getBGs("hyperzx", "aegwynn", "eu"))
+    #print(getBGs("hyperzx", "aegwynn", "eu"))
 
 
     #print(dbcalls.getCharNames("Server_Malfurion"))
