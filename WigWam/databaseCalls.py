@@ -57,11 +57,11 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
     compareset = set()
 
     for row in comparedata:
-        compareset.add((row[0], row[1]))
+        compareset.add((row[0].lower(), row[1].lower()))
     
     namelist_cleaned = []
     for tuple in namelist:
-        if tuple not in compareset: namelist_cleaned.append(tuple)
+        if (tuple[0].lower, tuple[1].lower()) not in compareset: namelist_cleaned.append(tuple)
         else: countrejected += 1
 
     ierrlist = []
@@ -234,7 +234,7 @@ def bulktransferChartoGeneral(infodictlist, id):
     values = []
 
     for infodict in infodictlist:
-        values.append({"Name": infodict["name"], "Server_Name":infodict["realm"], "Server_ID":id, "Class": infodict["class"],
+        values.append({"Name": infodict["name"].lower(), "Server_Name":infodict["realm"].lower(), "Server_ID":id, "Class": infodict["class"],
                       "lvl":infodict["level"], "Faction":infodict["faction"], "Race":infodict["race"]})
 
     stmt = insert(table)

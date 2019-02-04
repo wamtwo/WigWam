@@ -218,11 +218,16 @@ def getBGs(char, realm, region):
         rdict = resp.json()
         if "status" in rdict: return (rdict, "error", char, realm)
         elif len(rdict) == 0: return (rdict, "error", char, realm)
-        elif rdict["name"] != char: 
+        elif rdict["name"].lower() != char.lower(): 
             print("Charname mismatch! {} <-> {}".format(rdict["name"], char))
             return (rdict, "error", char, realm)
+        elif rdict["realm"].lower() != realm.lower():
+            print("Realm mismatch! {} <-> {}".format(rdict["realm"], realm))
+            return (rdict, "error", char, realm)            
         rdict2 = rdict["statistics"]["subCategories"][9]["subCategories"][1]
         del rdict["statistics"]
+
+        rdict["name"], rdict["realm"] = ir.refineCharandRealm(rdict["char"], rdict["realm"])
 
         return (rdict, rdict2)
 

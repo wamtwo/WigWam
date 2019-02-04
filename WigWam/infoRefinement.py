@@ -245,3 +245,8 @@ def refineCharInfo(infodict):
     infodict["race"] = raceList.get(infodict["race"], "Unknown")
 
     return infodict
+
+def refineCharandRealm(char, realm):
+    char = char.lower()
+    realm = realm.lower()
+    return (char, realm)
