@@ -22,7 +22,7 @@ def writeCharNames(target_table, namelist): #writing every single entry with com
     print("Writing to Database Table \"" + target_table + "\"")
 
 
-    with engine.begin() as connection:
+    with engine.connect() as connection:
         for index, tuple in enumerate(namelist):
             stmt = insert(table).values(Char_Name=tuple[1], Server_Name=tuple[0])
             try:
@@ -66,7 +66,7 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
 
     ierrlist = []
   
-    with engine.execution_options(autocommit=False).begin() as connection:
+    with engine.execution_options(autocommit=False).connect() as connection:
 
         if verbosity == True and len(namelist_cleaned) <= chunks: print("Too few entries for selected chunk size. Setting chunk to 1.")
         if verbosity == True and len(namelist_cleaned) >= chunks:
@@ -79,12 +79,13 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
                 stmt = insert(table)
 
                 if len(entries) > 0:
-                    with connection.execution_options(autocommit=False).begin() as trans:
+                    with connection.begin() as trans:
                         try:
-                            connection.execution_options(autocommit=False).execute(stmt, entries)
+                            connection.execute(stmt, entries)
+                            trans.commit()
                         except IntegrityError as ier:
+                            trans.rollback()
                             print("Integrity Error - attempting to write chunk entry for entry at the end of the process")
-                            #trans.rollback()
                             ierrlist = ierrlist + [(x[0], x[1]) for x in list]
                             #raise
                 i += 100 / chunks    
@@ -98,14 +99,17 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
             stmt = insert(table)
 
             if len(entries) > 0:
-                try:
-                    connection.execution_options(autocommit=False).execute(stmt, entries)
-                except IntegrityError as ier:
-                    print("Integrity Error")
-                    ierrlist = namelist_cleaned
-                    #raise
+                with connection.begin() as trans:
+                    try:
+                        connection.execute(stmt, entries)
+                        trans.commit()
+                    except IntegrityError as ier:
+                        print("Integrity Error")
+                        ierrlist = namelist_cleaned
+                        trans.rollback()
+                        #raise
                 print("Completed!")
-
+   
     elapsed = (time.clock() - starttime)
     #print("Done. \t --- \t %.2f seconds." %elapsed, end="\n\n")
 
@@ -123,7 +127,7 @@ def getCharNames(target_table, amount=0):
     table = Table(target_table, metadata, autoload=True, autoload_with=engine)
     stmt = select([table.columns.Server_Name, table.columns.Char_Name, table.columns.transferred_on])
     if amount > 0: stmt = stmt.limit(amount)
-    with engine.begin() as connection:
+    with engine.connect() as connection:
         result = connection.execute(stmt).fetchall()
     if len(result) == 0: return[("Empty", "Empty")]
     resultlist = []
@@ -136,7 +140,7 @@ def getCharNames(target_table, amount=0):
 def getServerbyID(id):
     table = Table("serverlist", metadata, autoload=True, autoload_with=engine)
     stmt = select([table.columns.Servername, table.columns.scanned_on, table.columns.Skip]).where(table.columns.Server_ID == id)
-    with engine.begin() as connection:
+    with engine.connect() as connection:
         result = connection.execute(stmt).fetchall()
     if len(result) == 0: return ("Error", "No Server for id {}".format(id))
     else: return (result[0]["Servername"], result[0]["scanned_on"], result[0]["Skip"])
@@ -146,14 +150,14 @@ def updateServerScanbyID(id):
     table = Table("serverlist", metadata, autoload=True, autoload_with=engine)
     stmt = update(table).values(scanned_on = now())
     stmt = stmt.where(table.columns.Server_ID == id)
-    with engine.begin() as connection:
+    with engine.connect() as connection:
         result = connection.execute(stmt)
     return "Updated Scan-Date for Server_ID {}".format(id)
 
 def getNumberofServers():
     table = Table("serverlist", metadata, autoload=True, autoload_with=engine)
     stmt = select([table.columns.Server_ID]).order_by(table.columns.Server_ID.asc())
-    with engine.begin() as connection:
+    with engine.connect() as connection:
         result = connection.execute(stmt).fetchall()
     return [row["Server_ID"] for row in result]
 
@@ -166,7 +170,7 @@ def getUntransferredChars(target_table, chunksize=100):
     stmt = select([table.columns.Server_Name, table.columns.Char_Name, table.columns.transferred_on])
     stmt = stmt.where(table.columns.transferred_on.is_(None))
     stmt = stmt.limit(chunksize)
-    with engine.begin() as connection:
+    with engine.connect() as connection:
         result = connection.execute(stmt).fetchall()
     return [(row["Server_Name"], row["Char_Name"], row["transferred_on"]) for row in result]
 
@@ -175,7 +179,7 @@ def transferChartogeneral(name, realm, server_id, pclass, lvl, faction, race):
     values = {"Name": name, "Server_Name":realm, "Server_ID":server_id, "Class": pclass, "lvl":lvl, "Faction":faction, "Race":race,}
     stmt = insert(table)
 
-    with engine.begin() as connection:
+    with engine.connect() as connection:
         try: 
             connection.execute(stmt, values)
             return True
@@ -189,7 +193,7 @@ def setCharasTransferred(target_table, chartuple):
     stmt = update(table).values(transferred_on = now())
     stmt = stmt.where(and_(table.columns.Char_Name == chartuple[1], table.columns.Server_Name == chartuple[0]))
 
-    with engine.begin() as connection:
+    with engine.connect() as connection:
         try:
             connection.execute(stmt)
             return True
@@ -203,7 +207,7 @@ def removeCharfromGeneral(charname, server_name):
     stmt = delete(table)
     stmt = stmt.where(and_(table.columns.Name == charname, table.colums.Server_Name == server_name))
 
-    with engine.begin() as connection:
+    with engine.connect() as connection:
         try:
             connection.execute(stmt)
             return True
@@ -219,7 +223,7 @@ def removeCharfromTable(target_table, chartuple):
     stmt = delete(table)
     stmt = stmt.where(and_(table.columns.Char_Name == chartuple[1], table.columns.Server_Name == chartuple[0]))
 
-    with engine.begin() as connection:
+    with engine.connect() as connection:
         try:
             connection.execute(stmt)
             return True
@@ -239,13 +243,16 @@ def bulktransferChartoGeneral(infodictlist, id):
 
     stmt = insert(table)
 
-    with engine.execution_options(autocommit=False).begin() as connection:
-        try: 
-            connection.execute(stmt, values)
-            return True
-        except:
-            print("Exception occurred")
-            return False
+    with engine.execution_options(autocommit=False).connect() as connection:
+        with connection.begin() as trans:
+            try: 
+                connection.execute(stmt, values)
+                trans.commit()
+                return True
+            except:
+                print("Exception occurred")
+                trans.rollback()
+                return False
 
     return False
 

@@ -296,6 +296,10 @@ def getAuctions(realm, region):
     if resp.status_code == 401:
         print(getApiToken())
         return getAuctions(realm, region)
+
+    if resp.status_code == 500:
+        print("Internal Server Error")
+        return {}
     
     else:
         rdict = resp.json()
@@ -350,6 +354,7 @@ def getAllChars(realm,region):
     start = time.time()
     print("Fetching data on ",realm,"-",region)
     testp = getAuctions(realm,region)
+    if len(testp) == 0: return []
     ttt=(testp["files"][0]["url"])
     response = urllib.request.urlopen(ttt)
     data = json.loads(response.read())
