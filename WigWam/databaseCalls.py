@@ -61,7 +61,7 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
     
     namelist_cleaned = []
     for tuple in namelist:
-        if (tuple[0].lower, tuple[1].lower()) not in compareset: namelist_cleaned.append(tuple)
+        if (tuple[0].lower(), tuple[1].lower()) not in compareset: namelist_cleaned.append(tuple)
         else: countrejected += 1
 
     ierrlist = []
@@ -81,7 +81,7 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
                 if len(entries) > 0:
                     with connection.execution_options(autocommit=False).begin() as trans:
                         try:
-                            connection.execute(stmt, entries)
+                            connection.execution_options(autocommit=False).execute(stmt, entries)
                         except IntegrityError as ier:
                             print("Integrity Error - attempting to write chunk entry for entry at the end of the process")
                             #trans.rollback()
@@ -99,7 +99,7 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
 
             if len(entries) > 0:
                 try:
-                    connection.execute(stmt, entries)
+                    connection.execution_options(autocommit=False).execute(stmt, entries)
                 except IntegrityError as ier:
                     print("Integrity Error")
                     ierrlist = namelist_cleaned

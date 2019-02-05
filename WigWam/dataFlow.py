@@ -180,7 +180,7 @@ if __name__ == "__main__":
 
     #print(bulktransferCharbyServerID(14, chunksize=500))
 
-    print(transferAllfromServer(11, 1000))
+    print(transferAllfromServer(13, 1000))
 
 
     print("done.")
