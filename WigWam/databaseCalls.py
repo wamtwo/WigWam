@@ -27,7 +27,7 @@ def writeCharNames(target_table, namelist): #writing every single entry with com
             stmt = insert(table).values(Char_Name=tuple[1], Server_Name=tuple[0])
             try:
                 #engine.execute(stmt)
-                connection.execution_options(autocommit=False).execute(stmt)
+                connection.execute(stmt)
             except IntegrityError as ierror:
                 #trans.rollback()
                 countrejected += 1
@@ -66,7 +66,7 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
 
     ierrlist = []
   
-    with engine.execution_options(autocommit=False).connect() as connection:
+    with engine.connect() as connection:
 
         if verbosity == True and len(namelist_cleaned) <= chunks: print("Too few entries for selected chunk size. Setting chunk to 1.")
         if verbosity == True and len(namelist_cleaned) >= chunks:
@@ -79,7 +79,7 @@ def writeCharNamesAtOnce(target_table, namelist, verbosity=False, chunks=10): # 
                 stmt = insert(table)
 
                 if len(entries) > 0:
-                    with connection.begin() as trans:
+                    with connection.execution_options(autocommit=False).begin() as trans:
                         try:
                             connection.execute(stmt, entries)
                             trans.commit()
@@ -243,8 +243,8 @@ def bulktransferChartoGeneral(infodictlist, id):
 
     stmt = insert(table)
 
-    with engine.execution_options(autocommit=False).connect() as connection:
-        with connection.begin() as trans:
+    with engine.connect() as connection:
+        with connection.execution_options(autocommit=False).begin() as trans:
             try: 
                 connection.execute(stmt, values)
                 trans.commit()
