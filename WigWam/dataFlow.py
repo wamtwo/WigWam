@@ -171,7 +171,7 @@ def transferAllfromAllServers(exceptions={}):
 
 
 if __name__ == "__main__":
-    #print(scanServer(2))
+    print(scanServer(3))
     #print(scanAllServers())
 
     #print("getting chars")
@@ -184,7 +184,7 @@ if __name__ == "__main__":
     #print(bulktransferCharbyServerID(2, chunksize=1000))
 
     #bac.getAllChars("Antonidas", "eu")
-    print(transferAllfromServer(2, 100))
+    print(transferAllfromServer(2, 1000))
 
 
     print("done.")

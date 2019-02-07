@@ -215,21 +215,26 @@ def getBGs(char, realm, region):
         return (0, "error", char, realm)
     
     else:
-        rdict = resp.json()
-        if "status" in rdict: return (rdict, "error", char, realm)
-        elif len(rdict) == 0: return (rdict, "error", char, realm)
-        elif rdict["name"].lower() != char.lower(): 
-            print("Charname mismatch! {} <-> {}".format(rdict["name"], char))
-            return (rdict, "error", char, realm)
-        elif rdict["realm"].lower() != realm.lower():
-            print("Realm mismatch! {} <-> {}".format(rdict["realm"], realm))
-            return (rdict, "error", char, realm)            
-        rdict2 = rdict["statistics"]["subCategories"][9]["subCategories"][1]
-        del rdict["statistics"]
+        try:
+            rdict = resp.json()
+        except Exception as exc:
+            print(f"Error while decoding json. Exception: {exc}")
+            return (0, "error", char, realm)
+        else:
+            if "status" in rdict: return (rdict, "error", char, realm)
+            elif len(rdict) == 0: return (rdict, "error", char, realm)
+            elif rdict["name"].lower() != char.lower(): 
+                print("Charname mismatch! {} <-> {}".format(rdict["name"], char))
+                return (rdict, "error", char, realm)
+            elif rdict["realm"].lower() != realm.lower():
+                print("Realm mismatch! {} <-> {}".format(rdict["realm"], realm))
+                return (rdict, "error", char, realm)            
+            rdict2 = rdict["statistics"]["subCategories"][9]["subCategories"][1]
+            del rdict["statistics"]
 
-        rdict["name"], rdict["realm"] = ir.refineCharandRealm(rdict["name"], rdict["realm"])
+            rdict["name"], rdict["realm"] = ir.refineCharandRealm(rdict["name"], rdict["realm"])
 
-        return (rdict, rdict2)
+            return (rdict, rdict2)
 
 def checkBGOrder(dict):
     checkList = []
@@ -314,16 +319,27 @@ def getGuild(char,realm,region):
     data = {"fields": "guild"}
     headers = {"Host":"eu.api.blizzard.com", "Content-Type":"application/json", "Authorization": "Bearer "+ apiKey}
     resp = requests.get(BlizzApiUrl, data, headers=headers, timeout=30)
-    resp=resp.json()
+
+    if resp.status_code == 401:
+        print(getApiToken())
+        return getGuild(char, realm, region)
+
+    if resp.status_code == 500:
+        print(f"Internal Server Error for {char} {realm}")
+        return ("0","0")
+    try:
+        resp=resp.json()
+    except Exception as exc:
+        print(f"Error while decoding! \tException: {exc}")
+        return ("0","0")
+
     if "guild" in resp:
         return(resp["guild"]["name"],resp["guild"]["realm"])
         
     else:
         return ("0","0")
 
-    if resp.status_code == 401:
-        print(getApiToken())
-        return getGuild(char, realm, region)
+
 
 
 def getMembers(char,realm,region):
@@ -339,7 +355,10 @@ def getMembers(char,realm,region):
     if resp.status_code == 401:
         print(getApiToken())
         return getMembers(char, realm, region)
-    
+
+    if resp.status_code == 500:
+        print(f"Internal Server error for {char}, {realm}")
+        return None
     else:    
         rdict = resp.json()
         if "members" in rdict:
@@ -364,7 +383,7 @@ def getAllChars(realm,region):
     guildlist=[]
    
     for item in data["auctions"]:
-        realmlist.append(item["ownerRealm"])
+        realmlist.append(item["ownerRealm".lower()])
         charlist.append(item["owner"])
   
     komlist=(list(zip(realmlist,charlist)))
@@ -381,7 +400,7 @@ def getAllChars(realm,region):
 
         tasks = (executor.submit(getGuild,komlist2[i][1],komlist2[i][0],region) for i in range (len(komlist2)))
 
-        for f in concurrent.futures.as_completed(tasks, timeout=600):
+        for f in concurrent.futures.as_completed(tasks, timeout=1200):
             print("\t" + str(cou) + "/" + str(cou2), end="")
             print("\r", end="")
 
@@ -391,10 +410,9 @@ def getAllChars(realm,region):
             except Exception as exc:
                 print("Exception {}".format(exc))
                 exceptioncount += 1
-            except: print("\nTimeout2")
             else:
-                    if t[0]!="0":
-                        guildlist.append(f.result())
+                if t[0]!="0":
+                    guildlist.append(f.result())
     
     elapsed = (time.clock() - starttime)
     print("Exceptions: {}\t Elapsed: {:.2f} ".format(exceptioncount, elapsed))
@@ -420,10 +438,10 @@ def getAllChars(realm,region):
                     print("Guild not found")
                 else:
                     t2=f2.result()
-                    for j in range (0,len(t2)-1):
+                    for j in range(len(t2)):
                         #print(t2[j]["character"]["name"])
                         if "realm" in t2[j]["character"]:
-                            komlist2.append((t2[j]["character"]["realm"],t2[j]["character"]["name"]))
+                            komlist2.append((t2[j]["character"]["realm".lower()],t2[j]["character"]["name"]))
                             if t2[j]["character"]["level"]==120:
                                 cou120=cou120+1
             except Exception as exc:
