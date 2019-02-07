@@ -383,7 +383,7 @@ def getAllChars(realm,region):
     guildlist=[]
    
     for item in data["auctions"]:
-        realmlist.append(item["ownerRealm".lower()])
+        realmlist.append(str(item["ownerRealm"]).lower())
         charlist.append(item["owner"])
   
     komlist=(list(zip(realmlist,charlist)))
@@ -441,7 +441,7 @@ def getAllChars(realm,region):
                     for j in range(len(t2)):
                         #print(t2[j]["character"]["name"])
                         if "realm" in t2[j]["character"]:
-                            komlist2.append((t2[j]["character"]["realm".lower()],t2[j]["character"]["name"]))
+                            komlist2.append((str(t2[j]["character"]["realm"]).lower(),t2[j]["character"]["name"]))
                             if t2[j]["character"]["level"]==120:
                                 cou120=cou120+1
             except Exception as exc:
