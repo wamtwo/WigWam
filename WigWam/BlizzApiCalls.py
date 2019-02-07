@@ -289,7 +289,6 @@ def getAuctions(realm, region):
     tokDict = joblib.load("token.pkl")
     apiKey = tokDict["Token"]
 
-    data = {"fields": "statistics"}
     headers = {"Content-Type":"application/json", "Authorization": "Bearer "+ apiKey}
     resp = requests.get(BlizzApiUrl, headers=headers)
 
@@ -363,7 +362,6 @@ def getAllChars(realm,region):
     charlist=[]
     komlist=[]
     guildlist=[]
-    guildserverlist=[]
    
     for item in data["auctions"]:
         realmlist.append(item["ownerRealm"])
@@ -372,7 +370,6 @@ def getAllChars(realm,region):
     komlist=(list(zip(realmlist,charlist)))
     komlist2= list(set(map(tuple, komlist)))
     komlist2tmp=len(komlist2)
-    guildlist=[];
     
     print("\tFetching all chars in auctions")
     cou=1
@@ -468,7 +465,6 @@ def getBulkBgs(charlist):
             except Exception as exc:
                 print("Exception {}".format(exc))
                 exceptioncount += 1
-            except: print("\nTimeout")
             else:
                 resultlist.append(result)
     

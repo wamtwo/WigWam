@@ -190,27 +190,70 @@ def transferChartogeneral(name, realm, server_id, pclass, lvl, faction, race):
 def setCharasTransferred(target_table, chartuple):
     if "'" in target_table: target_table = target_table.replace("'", "-")
     table = Table(target_table, metadata, autoload=True, autoload_with=engine)
-    stmt = update(table).values(transferred_on = now())
-    stmt = stmt.where(and_(table.columns.Char_Name == chartuple[1], table.columns.Server_Name == chartuple[0]))
-
+    stmt = table.select().where(and_(table.columns.Char_Name == chartuple[1], table.columns.Server_Name == chartuple[0]))
+    stmt2 = table.update().where(and_(table.columns.Char_Name == chartuple[1], table.columns.Server_Name == chartuple[0])).values(transferred_on = now())
+    
+    
     with engine.connect() as connection:
         try:
-            connection.execute(stmt)
+            result = connection.execute(stmt).fetchall()
+            if len(result) == 1: connection.execute(stmt2)
+            if len(result) > 1:
+                print("Duplicate values found while updating")
+            if len(result) == 0:
+                print(f"Error while updating: Entry for {chartuple[0]}, {chartuple[1]} not found.")
+                return False
             return True
         except:
             return False
-
     return False
+
+
+def bulkSetCharasTransferred(target_table, chartuplelist):
+    if "'" in target_table: target_table = target_table.replace("'", "-")
+    table = Table(target_table, metadata, autoload=True, autoload_with=engine)
+    errorlist = 0
+
+    
+    with engine.connect() as connection:
+
+        for index, chartuple in enumerate(chartuplelist):
+            print("Updating entry {}/{}".format(index+1, len(chartuplelist)), end="")
+            print("\r", end="")
+            stmt = table.select().where(and_(table.columns.Char_Name == chartuple[1], table.columns.Server_Name == chartuple[0]))
+            stmt2 = table.update().where(and_(table.columns.Char_Name == chartuple[1], table.columns.Server_Name == chartuple[0])).values(transferred_on = now())
+            try:
+                result = connection.execute(stmt).fetchall()
+                if len(result) == 1: connection.execute(stmt2)
+                if len(result) > 1:
+                    print("Duplicate values found while updating")
+                    errorlist += 1
+                if len(result) == 0:
+                    print(f"Error while updating: Entry for {chartuple[0]}, {chartuple[1]} not found. Removing Entry from player_general.")
+                    errorlist += 1
+                    print("Removed: {}".format(removeCharfromGeneral(chartuple[1], chartuple[0])))
+            except Exception as exc:
+                print(f"unhandled exception! \n {exc}")
+                raise
+    return errorlist
+
 
 def removeCharfromGeneral(charname, server_name):
     table = Table("player_general", metadata, autoload=True, autoload_with=engine)
-    stmt = delete(table)
-    stmt = stmt.where(and_(table.columns.Name == charname, table.colums.Server_Name == server_name))
-
+    stmt = table.select().where(and_(table.columns.Name == charname, table.columns.Server_Name == server_name))
+    stmt2 = table.delete().where(and_(table.columns.Name == charname, table.columns.Server_Name == server_name))
     with engine.connect() as connection:
         try:
-            connection.execute(stmt)
-            return True
+            result = connection.execute(stmt).fetchall()
+            if len(result) == 1:
+                connection.execute(stmt2)
+                return True
+            if len(result) > 1:
+                print("Duplicate values found while deleting! ENTRIES NOT DELETED!")
+                return False
+            if len(result) <= 0:
+                print(f"Error while deleting: Entry for {server_name}, {charname} not found.")
+                return False
         except:
             return False
 
@@ -225,7 +268,7 @@ def removeCharfromTable(target_table, chartuple):
 
     with engine.connect() as connection:
         try:
-            connection.execute(stmt)
+            result = connection.execute(stmt)
             return True
         except:
             return False

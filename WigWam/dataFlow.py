@@ -109,17 +109,20 @@ def bulktransferCharbyServerID(id, chunksize=100):
 
 def bulkMarkAsTransferred(infodictlist, server):
     if len(infodictlist) < 1: return ("List is empty", 0)
-    errorcount = 0
-    for index, entry in enumerate(infodictlist):
-        print("Updating entry {}/{}".format(index+1, len(infodictlist)), end="")
-        print("\r", end="")
-        if dbc.setCharasTransferred("Server_"+server, (entry["realm"], entry["name"])) == True: continue
-        else:
-            print("Error marking {}, {} as transferred. Removing from player_general".format(entry["realm"], entry["name"]))
-            print("Removed: {}".format(dbc.removeCharfromGeneral(entry["name"], entry["realm"])))
-            errorcount += 1
+    tuplelist = [(entry["realm"], entry["name"]) for entry in infodictlist]
 
-    return ("{} entries given. {} errors while updating.".format(len(infodictlist), errorcount), len(infodictlist)-errorcount)
+
+    errorcount = dbc.bulkSetCharasTransferred("Server_"+server, tuplelist)
+#    for index, entry in enumerate(infodictlist):
+#        print("Updating entry {}/{}".format(index+1, len(infodictlist)), end="")
+#        print("\r", end="")
+#        if dbc.setCharasTransferred("Server_"+server, (entry["realm"], entry["name"])) == True: continue
+#        else:
+#            print("Error marking {}, {} as transferred. Removing from player_general".format(entry["realm"], entry["name"]))
+#            print("Removed: {}".format(dbc.removeCharfromGeneral(entry["name"], entry["realm"])))
+#            errorcount += 1
+
+    return ("{} entries given. {} errors while updating.".format(len(tuplelist), errorcount), len(tuplelist)-errorcount)
 
 
 def transferAllfromServer(id, chunksize=500):
@@ -168,7 +171,7 @@ def transferAllfromAllServers(exceptions={}):
 
 
 if __name__ == "__main__":
-    print(scanServer(2))
+    #print(scanServer(2))
     #print(scanAllServers())
 
     #print("getting chars")
@@ -178,10 +181,10 @@ if __name__ == "__main__":
 
     #testblabla = bac.getBGs("Abbam", "Malfurion", "eu")
 
-    #print(bulktransferCharbyServerID(14, chunksize=100))
+    #print(bulktransferCharbyServerID(2, chunksize=1000))
 
     #bac.getAllChars("Antonidas", "eu")
-    #print(transferAllfromServer(2, 1000))
+    print(transferAllfromServer(2, 100))
 
 
     print("done.")
