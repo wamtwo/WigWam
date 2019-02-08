@@ -3,7 +3,7 @@ import time
 import numpy as np
 from sqlalchemy import create_engine, Table, select, MetaData, insert, delete, update
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.sql.functions import now
+from sqlalchemy.sql.functions import now, count
 from sqlalchemy.sql import and_
 
 
@@ -300,6 +300,18 @@ def bulktransferChartoGeneral(infodictlist, id):
     return False
 
 
+def getCountsServerTable(target_table):
+    if "'" in target_table: target_table = target_table.replace("'", "-")
+    table = Table(target_table, metadata, autoload=True, autoload_with=engine)
+    stmt2 = select([count()]).select_from(table)
+    stmt2 = stmt2.where(table.columns.transferred_on.is_(None))
+    stmt = select([count()]).select_from(table)
+
+    with engine.connect() as connection:
+        result = connection.execute(stmt).fetchall()
+        result2 = connection.execute(stmt2).fetchall()
+    return (result[0]["count_1"], result2[0]["count_1"])
+
 
 if __name__ == "__main__":
 
@@ -318,6 +330,8 @@ if __name__ == "__main__":
     #print(writeCharNames("Server_Malfurion_copy", testset))
     #stmt = delete(table)
     #connection.execute(stmt)
+
+    #getCountsServerTable("Server_Antonidas")
 
 
     print("done.")

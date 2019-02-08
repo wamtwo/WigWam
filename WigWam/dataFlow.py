@@ -127,6 +127,13 @@ def bulkMarkAsTransferred(infodictlist, server):
 
 def transferAllfromServer(id, chunksize=500):
     print(f"Attempting to transfer all Chars from Server ID {id}. Chunksize set to {chunksize}")
+    serverinfo = dbc.getServerbyID(id)
+    if serverinfo[0] == "error": return f"{serverinfo[1]}"
+    if serverinfo[2] == True: return f"Server {serverinfo[0]} is set to \"Skip\"."
+    all, untrans = dbc.getCountsServerTable("Server_"+serverinfo[0])
+    print(f"{serverinfo[0]:30} {all:7d} \t {untrans:7d}")
+    iterationestimate = untrans // chunksize +1
+    print(f"Estimated Iterrations: {iterationestimate}")
     starttime = time.clock()
     iterations = 1
     while True:
@@ -169,9 +176,20 @@ def transferAllfromAllServers(exceptions={}):
             servercount += 1
     return "Done. Scanned {} Servers.".format(servercount)
 
+def printAllServerCounts():
+    serverIDs = dbc.getNumberofServers()
+    print("{:30} Total \t Transferred".format("Server"))
+    for id in serverIDs:
+        serverinfo = dbc.getServerbyID(id)
+        if serverinfo[0] == "error": print(serverinfo[1])
+        if serverinfo[2] == True: print(f"Server {serverinfo[0]} is set to \"Skip\".", 0)
+        else:
+            all, untrans = dbc.getCountsServerTable("Server_"+serverinfo[0])
+            print(f"{serverinfo[0]:30} {all:7d} \t {untrans:7d}")
+
 
 if __name__ == "__main__":
-    print(scanServer(3))
+    #print(scanServer(3))
     #print(scanAllServers())
 
     #print("getting chars")
@@ -184,7 +202,9 @@ if __name__ == "__main__":
     #print(bulktransferCharbyServerID(2, chunksize=1000))
 
     #bac.getAllChars("Antonidas", "eu")
-    print(transferAllfromServer(2, 1000))
+    #print(transferAllfromServer(3, 1000))
+
+    printAllServerCounts()
 
 
     print("done.")
