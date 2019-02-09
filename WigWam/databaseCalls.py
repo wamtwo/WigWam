@@ -4,7 +4,7 @@ import numpy as np
 from sqlalchemy import create_engine, Table, select, MetaData, insert, delete, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.functions import now, count
-from sqlalchemy.sql import and_
+from sqlalchemy.sql import and_, or_
 
 
 username = os.environ.get("WIGWAMUSER")
@@ -161,18 +161,18 @@ def getNumberofServers():
         result = connection.execute(stmt).fetchall()
     return [row["Server_ID"] for row in result]
 
-def getUntransferredChars(target_table, chunksize=100):
+def getUntransferredChars(target_table, chunksize=100, fail_thresh=1):
     if "'" in target_table: target_table = target_table.replace("'", "-")
-    if chunksize > 1000 or chunksize < 1:
+    if chunksize > 10000 or chunksize < 1:
         print("Error, select chunksize between 1 and 1000.")
         return []
     table = Table(target_table, metadata, autoload=True, autoload_with=engine)
-    stmt = select([table.columns.Server_Name, table.columns.Char_Name, table.columns.transferred_on])
-    stmt = stmt.where(table.columns.transferred_on.is_(None))
+    stmt = select([table.columns.Server_Name, table.columns.Char_Name, table.columns.transferred_on, table.columns.failed_attempts])
+    stmt = stmt.where(and_(table.columns.transferred_on.is_(None), or_(table.columns.failed_attempts < fail_thresh, table.columns.failed_attempts.is_(None))))
     stmt = stmt.limit(chunksize)
     with engine.connect() as connection:
         result = connection.execute(stmt).fetchall()
-    return [(row["Server_Name"], row["Char_Name"], row["transferred_on"]) for row in result]
+    return [(row["Server_Name"], row["Char_Name"]) for row in result]
 
 def transferChartogeneral(name, realm, server_id, pclass, lvl, faction, race):
     table = Table("player_general", metadata, autoload=True, autoload_with=engine)
@@ -311,6 +311,32 @@ def getCountsServerTable(target_table):
         result = connection.execute(stmt).fetchall()
         result2 = connection.execute(stmt2).fetchall()
     return (result[0]["count_1"], result2[0]["count_1"])
+
+
+def increaseFailCount(target_table, chartuple):
+    if "'" in target_table: target_table = target_table.replace("'", "-")
+    table = Table(target_table, metadata, autoload=True, autoload_with=engine)
+    stmt = table.select().where(and_(table.columns.Char_Name == chartuple[1], table.columns.Server_Name == chartuple[0]))
+    
+    
+    with engine.connect() as connection:
+        try:
+            result = connection.execute(stmt).fetchall()
+            if len(result) == 1:
+                if result[0]["failed_attempts"] == None: failCount = 1
+                else: failCount = result[0]["failed_attempts"] + 1
+                stmt2 = table.update().where(and_(table.columns.Char_Name == chartuple[1], table.columns.Server_Name == chartuple[0])).values(failed_attempts = failCount)
+                connection.execute(stmt2)
+                return True
+            if len(result) > 1:
+                print("Duplicate values found while updating failed Attempts")
+                return False
+            if len(result) == 0:
+                print(f"Error while updating failed Attepmpts: Entry for {chartuple[0]}, {chartuple[1]} not found.")
+                return False
+        except:
+            return False
+    return False
 
 
 if __name__ == "__main__":

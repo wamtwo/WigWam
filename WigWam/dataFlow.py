@@ -61,14 +61,14 @@ def transferCharbyServerID(id, chunksize=100):
     return "Done."
 
 
-def bulktransferCharbyServerID(id, chunksize=100):
+def bulktransferCharbyServerID(id, chunksize=100, fail_thresh=1):
     serverinfo = dbc.getServerbyID(id)
     if serverinfo[0] == "error": return (serverinfo[1], 0)
     if serverinfo[2] == True: return (f"Server {serverinfo[0]} is set to \"Skip\".", 0)
-    print(f"Searching for untransferred Chars. Chunksize set to {chunksize}")
+    print(f"Searching for untransferred Chars. Chunksize set to {chunksize}, Failed Attempts Threshold is set to {fail_thresh}")
     server = serverinfo[0]
 
-    charlist = dbc.getUntransferredChars("Server_"+server, chunksize=chunksize)
+    charlist = dbc.getUntransferredChars("Server_"+server, chunksize=chunksize, fail_thresh=fail_thresh)
     if len(charlist) == 0: return ("No untransferred Chars found", 0)
     print(f"Found {len(charlist)} untransferred Chars.. fetching Char Information:")
 
@@ -89,15 +89,25 @@ def bulktransferCharbyServerID(id, chunksize=100):
             return ("Error!",0)
 
     if len(badlist) > 0:
-        delcount = 0
-        print("Removing bad entries from Server_{}".format(server))
+        failcount = 0
+        print("Updating failed Attempts for bad API responses")
         for index, entry in enumerate(badlist):
             print("Updating entry {}/{}".format(index+1, len(badlist)), end="")
             print("\r", end="")
-            if dbc.removeCharfromTable("Server_"+server, (entry[3], entry[2])) == True: delcount += 1
+            if dbc.increaseFailCount("Server_"+server, (entry[3], entry[2])) == True: failcount += 1
             else:
-                print("Error while deleting {} from Server_{}".format(entry[2],server))
-        print("\nDeleted {} entries".format(delcount), end="\n\n")
+                print("Error while incresing failed attempts {} from Server_{}".format(entry[2],server))
+        print("\nUpdated failed Attempts for {} entries".format(failcount), end="\n\n")
+#    if len(badlist) > 0:
+#        delcount = 0
+#        print("Removing bad entries from Server_{}".format(server))
+#        for index, entry in enumerate(badlist):
+#            print("Updating entry {}/{}".format(index+1, len(badlist)), end="")
+#            print("\r", end="")
+#            if dbc.removeCharfromTable("Server_"+server, (entry[3], entry[2])) == True: delcount += 1
+#            else:
+#                print("Error while deleting {} from Server_{}".format(entry[2],server))
+#        print("\nDeleted {} entries".format(delcount), end="\n\n")
 
     print("\nMarking Chars as transferred in Server_{}".format(server))
     transresult = bulkMarkAsTransferred(infodictlist, server)
@@ -105,7 +115,7 @@ def bulktransferCharbyServerID(id, chunksize=100):
 
 
 
-    return ("Done. Written {} entries into player_general, updated {} and removed {} entries from Server_{}".format(len(goodlist), transresult[1], len(badlist), server), len(charlist))
+    return ("Done. Written {} entries into player_general, updated {} and increased Failed Attempts on {} entries from Server_{}".format(len(goodlist), transresult[1], len(badlist), server), len(charlist))
 
 def bulkMarkAsTransferred(infodictlist, server):
     if len(infodictlist) < 1: return ("List is empty", 0)
@@ -178,7 +188,7 @@ def transferAllfromAllServers(exceptions={}):
 
 def printAllServerCounts():
     serverIDs = dbc.getNumberofServers()
-    print("{:30} Total \t Transferred".format("Server"))
+    print("{:32} Total \t Untransferred".format("Server"))
     for id in serverIDs:
         serverinfo = dbc.getServerbyID(id)
         if serverinfo[0] == "error": print(serverinfo[1])
@@ -199,12 +209,12 @@ if __name__ == "__main__":
 
     #testblabla = bac.getBGs("Abbam", "Malfurion", "eu")
 
-    #print(bulktransferCharbyServerID(2, chunksize=1000))
+    print(bulktransferCharbyServerID(2, chunksize=1000, fail_thresh=1))
 
     #bac.getAllChars("Antonidas", "eu")
     #print(transferAllfromServer(3, 1000))
 
-    printAllServerCounts()
+    #printAllServerCounts()
 
 
     print("done.")
