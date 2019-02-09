@@ -135,13 +135,13 @@ def bulkMarkAsTransferred(infodictlist, server):
     return ("{} entries given. {} errors while updating.".format(len(tuplelist), errorcount), len(tuplelist)-errorcount)
 
 
-def transferAllfromServer(id, chunksize=500):
+def transferAllfromServer(id, chunksize=500, fail_thresh=1):
     print(f"Attempting to transfer all Chars from Server ID {id}. Chunksize set to {chunksize}")
     serverinfo = dbc.getServerbyID(id)
     if serverinfo[0] == "error": return f"{serverinfo[1]}"
     if serverinfo[2] == True: return f"Server {serverinfo[0]} is set to \"Skip\"."
     all, untrans = dbc.getCountsServerTable("Server_"+serverinfo[0])
-    print(f"{serverinfo[0]:30} {all:7d} \t {untrans:7d}")
+    print(f"{serverinfo[0]} - Total {all:7d} \t Untransferred {untrans:7d}")
     iterationestimate = untrans // chunksize +1
     print(f"Estimated Iterrations: {iterationestimate}")
     starttime = time.clock()
@@ -149,7 +149,7 @@ def transferAllfromServer(id, chunksize=500):
     while True:
         print("\n\n ################################")
         print(f"\nStarting Iteration {iterations}.")
-        result = bulktransferCharbyServerID(id, chunksize)
+        result = bulktransferCharbyServerID(id, chunksize, fail_thresh=fail_thresh)
         print(result[0])
         if result[1] < chunksize: break
         iterations += 1
@@ -209,10 +209,13 @@ if __name__ == "__main__":
 
     #testblabla = bac.getBGs("Abbam", "Malfurion", "eu")
 
-    print(bulktransferCharbyServerID(2, chunksize=1000, fail_thresh=1))
+    #print(bulktransferCharbyServerID(2, chunksize=1000, fail_thresh=1))
+
+
 
     #bac.getAllChars("Antonidas", "eu")
-    #print(transferAllfromServer(3, 1000))
+
+    print(transferAllfromServer(3, 1000, fail_thresh=1))
 
     #printAllServerCounts()
 
