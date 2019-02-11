@@ -11,9 +11,17 @@ def scanServer(id):
     if serverinfo[0] == "error": return serverinfo[1]
     if serverinfo[2] == True: return f"Server {serverinfo[0]} is set to \"Skip\"."
     server = serverinfo[0]
+    server_realms = dbc.getConnectedRealms(id)
     print("Server {}, last scanned on: {}".format(serverinfo[0], serverinfo[1]))
 
-    charlist = bac.getAllChars(server,"eu")
+    charlist_raw = bac.getAllChars(server,"eu")
+    charlist = [(row[0], row[1]) for row in charlist_raw if row[0].lower() in server_realms]
+
+    #for verbosity:
+    print(f"{len(charlist_raw) - len(charlist)} entries don't match selected Server" )
+    if len(charlist_raw) - len(charlist) > 0:
+        print([chartuple for chartuple in charlist_raw if chartuple[0].lower() not in server_realms])
+
     print(dbc.writeCharNamesAtOnce("Server_" + server, charlist, verbosity=True, chunks=100))
     print(dbc.updateServerScanbyID(id))
 
@@ -199,7 +207,8 @@ def printAllServerCounts():
 
 
 if __name__ == "__main__":
-    #print(scanServer(3))
+    print(scanServer(16))
+    print(scanServer(39))
     #print(scanAllServers())
 
     #print("getting chars")
@@ -215,7 +224,7 @@ if __name__ == "__main__":
 
     #bac.getAllChars("Antonidas", "eu")
 
-    print(transferAllfromServer(3, 1000, fail_thresh=1))
+    #print(transferAllfromServer(3, 1000, fail_thresh=1))
 
     #printAllServerCounts()
 

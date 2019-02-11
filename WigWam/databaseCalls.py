@@ -339,6 +339,20 @@ def increaseFailCount(target_table, chartuple):
     return False
 
 
+def getConnectedRealms(id):
+    table = Table("realmlist", metadata, autoload=True, autoload_with=engine)
+    stmt = select([table.columns.Realm_Name]).where(table.columns.Server_ID == id)
+
+    with engine.connect() as connection:
+        try:
+            result = connection.execute(stmt).fetchall()
+        except Exception as exc:
+            print(exc)
+            raise
+        else:
+            if len(result) < 1: return {}
+            if len(result) > 0: return {row["Realm_Name"].lower() for row in result}
+
 if __name__ == "__main__":
 
     #testresult = getCharNames("Server_Blackmoore", 0)
