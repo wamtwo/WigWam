@@ -156,7 +156,7 @@ def transferAllfromServer(id, chunksize=500, fail_thresh=1):
     iterations = 1
     while True:
         print("\n\n ################################")
-        print(f"\nStarting Iteration {iterations}.")
+        print(f"\nStarting Iteration {iterations} of {iterationestimate} estimated iterrations.")
         result = bulktransferCharbyServerID(id, chunksize, fail_thresh=fail_thresh)
         print(result[0])
         if result[1] < chunksize: break
@@ -207,9 +207,9 @@ def printAllServerCounts():
 
 
 if __name__ == "__main__":
-    print(scanServer(16))
-    print(scanServer(39))
-    #print(scanAllServers())
+    #print(scanServer(16))
+    #print(scanServer(39))
+    print(scanAllServers())
 
     #print("getting chars")
     #transferCharbyServerID(14, chunksize=100)
