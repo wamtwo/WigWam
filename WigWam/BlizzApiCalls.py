@@ -10,6 +10,7 @@ import pprint
 import json
 import requests
 from sklearn.externals import joblib
+from config import WWSettings
 import infoRefinement as ir
 import urllib, json 
 from urllib.parse import quote, urlencode
@@ -393,10 +394,9 @@ def getAllChars(realm,region):
     print("\tFetching all chars in auctions")
     cou=1
     cou2=len(komlist2)
-    workerz=6
     exceptioncount = 0
     starttime = time.clock()
-    with concurrent.futures.ThreadPoolExecutor (max_workers=workerz) as executor:
+    with concurrent.futures.ThreadPoolExecutor (max_workers=WWSettings.workerz) as executor:
 
         tasks = (executor.submit(getGuild,komlist2[i][1],komlist2[i][0],region) for i in range (len(komlist2)))
 
@@ -425,7 +425,7 @@ def getAllChars(realm,region):
     cou=1
     cou2=len(guildlist3)
     cou120=0
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workerz) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=WWSettings.workerz) as executor:
 
         tasks2 = (executor.submit(getMembers,guildlist3[i][0],guildlist3[i][1],region) for i in range(len(guildlist3)))
 
@@ -464,13 +464,12 @@ def getAllChars(realm,region):
 
 def getBulkBgs(charlist):
     resultlist = []
-    workerz = 6
 
     starttime = time.clock()
     count = 1
     exceptioncount = 0
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workerz) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=WWSettings.workerz) as executor:
         
         task = (executor.submit(getBGs, charlist[i][1], charlist[i][0], "eu") for i in range(len(charlist)))
 
@@ -491,7 +490,56 @@ def getBulkBgs(charlist):
 
     return resultlist
 
+def playerIDgetBGs(charinfo):
+    result = getBGs(charinfo["Name"], charinfo["Server_Name"], "eu")
+    if result[1] == "error":
+        if charinfo["failed_attempts"] == None: charinfo["failed_attempts"] = 1
+        else: charinfo["failed_attempts"] += 1
+        return charinfo        #ADD LOGIC for failed BG calls from player_general here.
+    else: 
+        rdict1, rdict2 = result
 
+        updated_info = ir.refineCharInfo(rdict1)
+        charinfo["Class"] = updated_info["class"]
+        charinfo["lvl"] = updated_info["level"]
+        charinfo["Faction"] = updated_info["faction"]
+        charinfo["Race"] = updated_info["race"]
+        charinfo["failed_attempts"] = 0
+        return charinfo
+
+
+    return True
+
+
+def getBulkBgsforGeneral(charlist):
+    resultlist = []
+    workerz = 6
+
+    starttime = time.clock()
+    count = 1
+    exceptioncount = 0
+
+#    result = playerIDgetBGs(charlist[0])
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workerz) as executor:
+        
+        task = (executor.submit(playerIDgetBGs, charinfo) for charinfo in charlist)
+
+        for future in concurrent.futures.as_completed(task):
+            print("\t" + str(count) + "/" + str(len(charlist)), end="")
+            print("\r", end="")
+            count += 1
+            try:
+                result = future.result()
+            except Exception as exc:
+                print("Exception {}".format(exc))
+                exceptioncount += 1
+            else:
+                resultlist.append(result)
+    
+    elapsed = (time.clock() - starttime)
+    print("Exceptions: {}\t Elapsed: {:.2f} ".format(exceptioncount, elapsed))
+
+    return resultlist
 
 
 if __name__ == "__main__":
