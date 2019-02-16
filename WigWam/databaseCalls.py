@@ -400,10 +400,39 @@ def bulkUpdateCharsGeneral(charlist): #updates a chunk of entries for player_gen
     return errorlist
 
 
+def bulkWriteBG(bgdictlist):    #writes a list of chars into the main table
+    print(f"Writing {len(bgdictlist)} entries (single chunk) to Database Table \"player_bg\"")
+    table = Table("player_bg", metadata, autoload=True, autoload_with=engine)
 
 
+    stmt = insert(table)
 
+    with engine.connect() as connection:
+        with connection.execution_options(autocommit=False).begin() as trans:
+            try: 
+                connection.execute(stmt, bgdictlist)
+                trans.commit()
+                print("Success.")
+                return True
+            except:                     #Rollback on exception so no "untracked" entries will be writting into DB
+                print("Exception occurred")
+                trans.rollback()
+                return False
 
+    return False
+
+def getCountfromGeneral(id, lvl, days, fail_thresh):
+    table = Table("player_general", metadata, autoload=True, autoload_with=engine)
+    lookuptime = datetime.datetime.now() - datetime.timedelta(days=days)
+
+    stmt = select([count()]).select_from(table)
+    stmt = stmt.where(and_(table.columns.Server_ID == id, table.columns.lvl == lvl, 
+                           or_(table.columns.scanned_on <= lookuptime, table.columns.scanned_on.is_(None)),
+                           or_(table.columns.failed_attempts < fail_thresh, table.columns.failed_attempts.is_(None))))
+
+    with engine.connect() as connection:
+        result = connection.execute(stmt).fetchall()
+    return result[0]["count_1"]
 
 
 

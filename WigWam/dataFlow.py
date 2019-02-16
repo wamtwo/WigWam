@@ -206,23 +206,54 @@ def printAllServerCounts():                     #prints total entries + untransf
             print(f"{serverinfo[0]:30} {all:7d} \t {untrans:7d}")
 
 
-def scanfromGeneralbyServerID(id, lvl=120, chunksize=1000):
+def scanfromGeneralbyServerID(id, lvl=120, chunksize=1000, days=7, fail_thresh=3):
     serverinfo = dbc.getServerbyID(id)                          #returns the name of the server from the serverlist
     if serverinfo[0] == "error": return (serverinfo[1], 0)
     print(f"Scanning Chars from player_general. Chunksize set to {chunksize}")
     server = serverinfo[0]
 
-    charlist = dbc.getCharsfromGeneral(id, lvl, 1000, days=1)
+    charlist = dbc.getCharsfromGeneral(id, lvl, chunksize, days)
 
-    charlist_updated = bac.getBulkBgsforGeneral(charlist)
+    charlist_updated, bgdictlist = bac.getBulkBgsforGeneral(charlist)
 
     print("Updating entries")
     errorcount = dbc.bulkUpdateCharsGeneral(charlist_updated)
     print(f"Updating complete with {errorcount} errors.")
 
+    print("Writing BG Information into DB")
+
+
+    bg_db = dbc.bulkWriteBG(bgdictlist)
+
+    if bg_db == True:
+        return (f"Successfully updated {len(charlist)} Entries from player_general and added {len(bgdictlist)} Entries to player_bg", len(charlist))
+    else: 
+        print("Error while writing into player_bg")
+        return ("Error!", 0)
 
 
     return True
+
+def scanAllfromGeneralbyServerID(id, lvl=120, chunksize=1000, days=7, fail_thresh=3): #updates all chars (chunk by chunk) from player_general with specified server id and writing bg data into player_bg by looping over ScanfromGeneralbyServerID()
+    print(f"Attempting to transfer all Chars from Server ID {id}. Chunksize set to {chunksize}")
+    serverinfo = dbc.getServerbyID(id)
+    if serverinfo[0] == "error": return f"{serverinfo[1]}"
+    if serverinfo[2] == True: return f"Server {serverinfo[0]} is set to \"Skip\"."
+    unscanned = dbc.getCountfromGeneral(id, lvl, days, fail_thresh) #fetches count of chars from server id, not scanned in the specified days who have at least the specified lvl
+    print(f"{serverinfo[0]} - Total Unscanned on the last {days} days: {unscanned:7d}")
+    iterationestimate = unscanned // chunksize +1                     #estimates iterations
+    print(f"Estimated Iterrations: {iterationestimate}")
+    starttime = time.clock()
+    iterations = 1
+    while True:                                     #loops over bulktransferCharbyServerID the number of untransferred chars is smaller than the specified chunk size
+        print("\n\n ################################")
+        print(f"\nStarting Iteration {iterations} of {iterationestimate} estimated iterrations.")
+        result = scanfromGeneralbyServerID(id, lvl, chunksize, days, fail_thresh)
+        print(result[0])
+        if result[1] < chunksize: break
+        iterations += 1
+    elapsed = (time.clock() - starttime)
+    return "Done in {} iterations. Elapsed: {:.2f} seconds".format(iterations, elapsed)
 
 
 if __name__ == "__main__":
@@ -247,6 +278,8 @@ if __name__ == "__main__":
 
     #printAllServerCounts()
 
-    scanfromGeneralbyServerID(3)
+    #scanfromGeneralbyServerID(3)
+    print(scanAllfromGeneralbyServerID(3))
+
 
     print("done.")

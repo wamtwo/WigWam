@@ -495,7 +495,7 @@ def playerIDgetBGs(charinfo):
     if result[1] == "error":
         if charinfo["failed_attempts"] == None: charinfo["failed_attempts"] = 1
         else: charinfo["failed_attempts"] += 1
-        return charinfo        #ADD LOGIC for failed BG calls from player_general here.
+        return (charinfo, "error")        #ADD LOGIC for failed BG calls from player_general here.
     else: 
         rdict1, rdict2 = result
 
@@ -505,7 +505,10 @@ def playerIDgetBGs(charinfo):
         charinfo["Faction"] = updated_info["faction"]
         charinfo["Race"] = updated_info["race"]
         charinfo["failed_attempts"] = 0
-        return charinfo
+
+        bginfo = ir.refineBGInfoforDB(rdict2)
+        bginfo["Player_ID"] = charinfo["Player_ID"]
+        return (charinfo, bginfo)
 
 
     return True
@@ -513,14 +516,15 @@ def playerIDgetBGs(charinfo):
 
 def getBulkBgsforGeneral(charlist):
     resultlist = []
-    workerz = 6
+    bglist = []
 
     starttime = time.clock()
     count = 1
     exceptioncount = 0
 
-#    result = playerIDgetBGs(charlist[0])
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workerz) as executor:
+
+    result = playerIDgetBGs(charlist[3])
+    with concurrent.futures.ThreadPoolExecutor(max_workers=WWSettings.workerz) as executor:
         
         task = (executor.submit(playerIDgetBGs, charinfo) for charinfo in charlist)
 
@@ -534,12 +538,13 @@ def getBulkBgsforGeneral(charlist):
                 print("Exception {}".format(exc))
                 exceptioncount += 1
             else:
-                resultlist.append(result)
+                resultlist.append(result[0])
+                if result[1] != "error": bglist.append(result[1])
     
     elapsed = (time.clock() - starttime)
     print("Exceptions: {}\t Elapsed: {:.2f} ".format(exceptioncount, elapsed))
 
-    return resultlist
+    return (resultlist, bglist)
 
 
 if __name__ == "__main__":

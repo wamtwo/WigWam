@@ -29,6 +29,9 @@ def refineBGInfo(bgdict):
         simpledict["Eye of the Storm battles (estimated)"], simpledict["Eye of the Storm victories (estimated)"] = calctuple[1]
         simpledict["Eye of the Storm battles deficit"], simpledict["Eye of the Storm victories deficit"] = calctuple[2]
 
+        if simpledict["Battleground played the most"] == 0: simpledict["Battleground played the most"] = ("None", "0")
+        if simpledict["Battleground won the most"] == 0: simpledict["Battleground won the most"] = ("None", "0")
+
         cardsdict = {}
         #reorganizing simpledict into dict with blocks of associated data ("cards")
         cardsdict["General"] = {"Battlegrounds played": simpledict["Battlegrounds played"],
@@ -90,6 +93,52 @@ def refineBGInfo(bgdict):
 
 
         return cardsdict
+
+
+def refineBGInfoforDB(bgdict): 
+    #reorganizes api bg data
+    if bgdict["name"] != "Battlegrounds": return "Error, incorrect Data or Data Format received (refineBGInfo)"
+    else:
+        simpledict = {}   
+        for item in bgdict["statistics"]: #putting relevant information into simple 1 dimensional dict
+            if "highest" in item.keys(): simpledict[item["name"]] = (item["highest"], str(item["quantity"]))
+            else: simpledict[item["name"]] = item["quantity"]
+        
+        calctuple = calcStats(simpledict) # calculates battles/victories without EotS and estimates EotS stats
+        simpledict["Battlegrounds played (calculated)"], simpledict["Battlegrounds won (calculated)"] = calctuple[0]
+        simpledict["Eye of the Storm battles (estimated)"], simpledict["Eye of the Storm victories (estimated)"] = calctuple[1]
+        simpledict["Eye of the Storm battles deficit"], simpledict["Eye of the Storm victories deficit"] = calctuple[2]
+
+        if simpledict["Battleground played the most"] == 0: simpledict["Battleground played the most"] = ("None", 0)
+        if simpledict["Battleground won the most"] == 0: simpledict["Battleground won the most"] = ("None", 0)
+
+        dbdict = {"BG_played": simpledict["Battlegrounds played"], "BG_won": simpledict["Battlegrounds won"],
+                  "played_most_n": simpledict["Battleground played the most"][0], "played_most_c":simpledict["Battleground played the most"][1],
+                  "won_most_n":simpledict["Battleground won the most"][0], "won_most_c":simpledict["Battleground won the most"][1],
+                  "BG_played_c": simpledict["Battlegrounds played (calculated)"], "BG_won_c": simpledict["Battlegrounds won (calculated)"],
+                  "AV_played": simpledict["Alterac Valley battles"], "AV_won": simpledict["Alterac Valley victories"],
+                  "AV_tower_def": simpledict["Alterac Valley towers defended"], "AV_tower_cap": simpledict["Alterac Valley towers captured"],
+                  "AB_played": simpledict["Arathi Basin battles"], "AB_won": simpledict["Arathi Basin victories"],
+                  "Gil_played": simpledict["Battle for Gilneas battles"], "Gil_won": simpledict["Battle for Gilneas victories"],
+                  "EotS_played": simpledict["Eye of the Storm battles"], "EotS_won": simpledict["Eye of the Storm victories"],
+                  "EotS_flags": simpledict["Eye of the Storm flags captured"], "EotS_played_est": simpledict["Eye of the Storm battles (estimated)"],
+                  "EotS_won_est": simpledict["Eye of the Storm victories (estimated)"], "EotS_played_def": simpledict["Eye of the Storm battles deficit"], 
+                  "EotS_won_def": simpledict["Eye of the Storm victories deficit"], 
+                  "SS_played": simpledict["Seething Shore battles"], "SS_won": simpledict["Seething Shore victories"], 
+                  "SotA_played": simpledict["Strand of the Ancients battles"], "SotA_won": simpledict["Strand of the Ancients victories"], 
+                  "TP_played": simpledict["Twin Peaks battles"], "TP_won": simpledict["Twin Peaks victories"], 
+                  "TP_flags_cap": simpledict["Twin Peaks flags captured"], "TP_flags_ret": simpledict["Twin Peaks flags returned"], 
+                  "WS_played": simpledict["Warsong Gulch battles"], "WS_won": simpledict["Warsong Gulch victories"],
+                  "WS_flags_cap": simpledict["Warsong Gulch flags captured"], "WS_flags_ret": simpledict["Warsong Gulch flags returned"], 
+                  "SM_played": simpledict["Silvershard Mines battles"], "SM_won": simpledict["Silvershard Mines victories"],
+                  "TK_played": simpledict["Temple of Kotmogu battles"], "TK_won": simpledict["Temple of Kotmogu victories"], 
+                  "IoC_played": simpledict["Isle of Conquest battles"], "IoC_won": simpledict["Isle of Conquest victories"], 
+                  "DG_played": simpledict["Deepwind Gorge battles"], "DG_won": simpledict["Deepwind Gorge victories"]}
+
+        return dbdict
+
+
+
 
 
 def createBGCharts(char, realm, cardsdict): #deprecated test function, use createMoreBGCharts(char, realm, cardsdict) instead
