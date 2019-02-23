@@ -539,7 +539,7 @@ def getBulkBgsforGeneral(charlist):
                 exceptioncount += 1
             else:
                 resultlist.append(result[0])
-                if result[1] != "error": bglist.append(result[1])
+                if result[1] != "error" and result[0]["lvl"] == 120: bglist.append(result[1])
     
     elapsed = (time.clock() - starttime)
     print("Exceptions: {}\t Elapsed: {:.2f} ".format(exceptioncount, elapsed))

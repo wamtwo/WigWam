@@ -214,6 +214,8 @@ def scanfromGeneralbyServerID(id, lvl=120, chunksize=1000, days=7, fail_thresh=3
 
     charlist = dbc.getCharsfromGeneral(id, lvl, chunksize, days)
 
+    if len(charlist) == 0: return (f"No Chars found with Server_ID {id}, lvl {lvl}, that have not been scanned in the last {days} days and a fail threshold below {fail_thresh}",0)
+
     charlist_updated, bgdictlist = bac.getBulkBgsforGeneral(charlist)
 
     print("Updating entries")
@@ -256,6 +258,30 @@ def scanAllfromGeneralbyServerID(id, lvl=120, chunksize=1000, days=7, fail_thres
     return "Done in {} iterations. Elapsed: {:.2f} seconds".format(iterations, elapsed)
 
 
+def calcStatsforServer(id):
+    print(f"Fetching Data for Server ID {id}")
+    charlist = dbc.getCharsfromGeneral(id, 120, 0, 0, 1, True)
+
+    idlist = [char["Player_ID"] for char in charlist]
+
+    print(f"Fetching BG Data for {len(idlist)} entries.")
+
+    resultlist, faillist = dbc.getBGData(idlist)
+
+    print(f"Fetched {len(resultlist)} BG entries and failed to fetch {len(faillist)} entries.")
+
+    print("Extracting and calculating relevant Data from Set")
+    general_dict, horde_dict, alliance_dict = ir.createBGDF(charlist, resultlist)
+
+    print("Writing Results to BG_Server BD")
+
+    success = dbc.writetoBGServer([general_dict, horde_dict, alliance_dict])
+
+    print(f"Written to DB sucessfully: {success}")
+
+    return f"Calculated Stats for Server ID {id}, using {len(resultlist)} entries."
+
+
 if __name__ == "__main__":
     #print(scanServer(16))
     #print(scanServer(39))
@@ -279,7 +305,13 @@ if __name__ == "__main__":
     #printAllServerCounts()
 
     #scanfromGeneralbyServerID(3)
-    print(scanAllfromGeneralbyServerID(3))
+    #print(scanAllfromGeneralbyServerID(3,120, days=1))
 
+    #calcStatsforServer(3)
+
+    print(scanServer(3))
+    print(transferAllfromServer(3, 1000, 1))
+    print(scanAllfromGeneralbyServerID(3,120, 1000, 7, 3))
+    print(calcStatsforServer(3))
 
     print("done.")

@@ -299,3 +299,44 @@ def refineCharandRealm(char, realm):
     char = char.lower()
     realm = realm.lower()
     return (char, realm)
+
+def createBGDF(charlist, bglist):
+    df_char = pd.DataFrame(charlist)
+    df_bg = pd.DataFrame(bglist)
+
+    df_main = pd.merge(df_char, df_bg, on=["Player_ID"])
+    
+    df_horde = df_main[df_main.Faction == "Horde"]
+    df_alliance = df_main[df_main.Faction == "Alliance"]
+
+    general_dict = createServerBGEntry("General", df_main)
+    horde_dict = createServerBGEntry("Horde", df_horde)
+    alliance_dict = createServerBGEntry("Alliance", df_alliance)
+
+    return (general_dict, horde_dict, alliance_dict)
+
+
+
+def createServerBGEntry(cat, df):
+    if cat not in {"General", "Horde", "Alliance"}:
+        print("Category Error!")
+        return {}
+    else:
+        DB_bg_dict = {}
+        diff_set = {"Unnamed: 0", "Class", "Faction", "Name", "Player_ID", "Race", "Server_ID", "Server_Name", "failed_attempts", "lvl", "scanned_on_x", "scanned_on_y", "played_most_n", "won_most_n"}
+
+        for item in df:
+            if item not in diff_set:
+                DB_bg_dict[f"{item}"] = int(df[item].sum())
+                DB_bg_dict[f"{item}_mean"] = round(df[item].mean(),2)
+                DB_bg_dict[f"{item}_max"] = int(df[item].max())
+                DB_bg_dict[f"{item}_75"] = round(df[item].quantile(0.75),2)
+
+        DB_bg_dict["played_most_n"] = df["played_most_n"].replace("None", np.nan).dropna().value_counts()[[0]].index.item()
+        DB_bg_dict["won_most_n"] = df["won_most_n"].replace("None", np.nan).dropna().value_counts()[[0]].index.item()
+        DB_bg_dict["Type"] = cat
+        DB_bg_dict["Server_ID"] = df["Server_ID"].head(1).item()
+        DB_bg_dict["entries"] = int(df["Name"].count())
+
+
+        return DB_bg_dict
