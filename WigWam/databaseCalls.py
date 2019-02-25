@@ -460,13 +460,13 @@ def getBGData(idlist):
 
     idlist_chunked = [[idlist[x] for x in range(y*1000, (y+1)*1000)] if (y+1)*1000 <= len(idlist) else [idlist[x] for x in range(y*1000, len(idlist))] for y in range(len(idlist)//1000+1)]
 
-    print(f"Writing {len(idlist)} in {len(idlist_chunked)} Chunks.")
+    print(f"\tWriting {len(idlist)} in {len(idlist_chunked)} Chunks.")
     starttime = time.clock()
 
     with engine.connect() as connection:
 
         for index, chunk in enumerate(idlist_chunked):
-            print(f"Fetching chunk {index+1}/{len(idlist_chunked)}", end="")
+            print(f"\t\tFetching chunk {index+1}/{len(idlist_chunked)}", end="")
             print("\r", end="")
 
             stmt = table.select().where(table.columns.Player_ID.in_(chunk))
@@ -480,7 +480,7 @@ def getBGData(idlist):
                     faillist.append("TBA")
 
         elapsed = (time.clock() - starttime)
-        print(f"\nWritten in {elapsed:.2f} seconds")
+        print(f"\n\tWritten in {elapsed:.2f} seconds")
     return (resultlist, faillist)
 
 def writetoBGServer(DB_bg_dict_list):
