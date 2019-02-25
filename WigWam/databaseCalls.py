@@ -9,7 +9,7 @@ from sqlalchemy.sql import and_, or_
 import datetime
 
 #engine = create_engine("mssql+pyodbc://" + username + ":" + password + "@wigwam.database.windows.net/BzApiDB?driver=SQL+Server+Native+Client+11.0")
-engine = create_engine(WWSettings.engineString)
+engine = create_engine(WWSettings.engineString, pool_size=30)
 
 metadata = MetaData()
 
@@ -458,22 +458,29 @@ def getBGData(idlist):
     faillist = []
     resultlist = []
 
+    idlist_chunked = [[idlist[x] for x in range(y*1000, (y+1)*1000)] if (y+1)*1000 <= len(idlist) else [idlist[x] for x in range(y*1000, len(idlist))] for y in range(len(idlist)//1000+1)]
+
+    print(f"Writing {len(idlist)} in {len(idlist_chunked)} Chunks.")
+    starttime = time.clock()
+
     with engine.connect() as connection:
 
-        for index, id in enumerate(idlist):
-            print(f"Updating entry {index+1}/{len(idlist)}", end="")
+        for index, chunk in enumerate(idlist_chunked):
+            print(f"Fetching chunk {index+1}/{len(idlist_chunked)}", end="")
             print("\r", end="")
 
-            stmt = table.select().where(table.columns.Player_ID == id)
-            stmt = stmt.order_by(table.columns.scanned_on.desc())
-            stmt = stmt.limit(1)
+            stmt = table.select().where(table.columns.Player_ID.in_(chunk))
 
             result = connection.execute(stmt).fetchall()
-            if len(result) == 0:
-                faillist.append(id)
-            elif len(result) == 1: resultlist.append({item[0]:item[1] for item in result[0].items()})
-            else: print("Error!!!")
+            for row in result:
+                resultlist.append({item[0]:item[1] for item in row.items()})
 
+            if len(chunk) > len(result): 
+                for x in range(len(chunk)-len(result)):
+                    faillist.append("TBA")
+
+        elapsed = (time.clock() - starttime)
+        print(f"\nWritten in {elapsed:.2f} seconds")
     return (resultlist, faillist)
 
 def writetoBGServer(DB_bg_dict_list):

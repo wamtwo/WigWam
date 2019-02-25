@@ -309,9 +309,9 @@ if __name__ == "__main__":
 
     #calcStatsforServer(3)
 
-    print(scanServer(3))
-    print(transferAllfromServer(3, 1000, 1))
-    print(scanAllfromGeneralbyServerID(3,120, 1000, 7, 3))
+    #print(scanServer(3))
+    #print(transferAllfromServer(3, 1000, 1))
+    #print(scanAllfromGeneralbyServerID(3,120, 1000, 7, 3))
     print(calcStatsforServer(3))
 
     print("done.")
