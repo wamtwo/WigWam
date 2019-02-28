@@ -260,6 +260,11 @@ def scanAllfromGeneralbyServerID(id, lvl=120, chunksize=1000, days=7, fail_thres
 
 def calcStatsforServer(id):
     print(f"Fetching Data for Server ID {id}")
+
+    serverinfo = dbc.getServerbyID(id)
+    if serverinfo[0] == "error": return f"{serverinfo[1]}"
+    if serverinfo[2] == True: return f"Server {serverinfo[0]} is set to \"Skip\"."
+
     charlist = dbc.getCharsfromGeneral(id, 120, 0, 0, 1, True)
 
     idlist = [char["Player_ID"] for char in charlist]
@@ -286,7 +291,7 @@ def scanAllfromGeneral(lvl=120, chunksize=1000, days=14, fail_thresh=3, exceptio
     serverIDs = dbc.getNumberofServers()
     servercount = 0
 
-    print(f"Attempting to Update and Transfer all Chars from player_general for {len(ServerIds)} Servers")
+    print(f"Attempting to Update and Transfer all Chars from player_general for {len(serverIDs)} Servers")
     print(f"Level Treshold: {lvl} / Chunksize: {chunksize} / Fail Threshold: {fail_thresh} \nfor entries not scanned in the last {days} days.")
 
     for id in serverIDs:
@@ -298,11 +303,11 @@ def scanAllfromGeneral(lvl=120, chunksize=1000, days=14, fail_thresh=3, exceptio
             servercount += 1
     return "Done for {} Servers.".format(servercount)
 
-def calcStatsforAllServers(exceptios={}):
+def calcStatsforAllServers(exceptions={}):
     serverIDs = dbc.getNumberofServers()
     servercount = 0
 
-    print(f"Attempting to Calculate BG Stats for {len(ServerIds)} Servers")
+    print(f"Attempting to Calculate BG Stats for {len(serverIDs)} Servers")
 
     for id in serverIDs:
         if id in exceptions: print(f"Skipping Server ID {id}")
