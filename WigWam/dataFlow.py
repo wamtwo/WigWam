@@ -282,6 +282,44 @@ def calcStatsforServer(id):
     return f"Calculated Stats for Server ID {id}, using {len(resultlist)} entries."
 
 
+def scanAllfromGeneral(lvl=120, chunksize=1000, days=14, fail_thresh=3, exceptions={}):
+    serverIDs = dbc.getNumberofServers()
+    servercount = 0
+
+    print(f"Attempting to Update and Transfer all Chars from player_general for {len(ServerIds)} Servers")
+    print(f"Level Treshold: {lvl} / Chunksize: {chunksize} / Fail Threshold: {fail_thresh} \nfor entries not scanned in the last {days} days.")
+
+    for id in serverIDs:
+        if id in exceptions: print(f"Skipping Server ID {id}")
+        else:
+            print(f"ServerID {id} von {len(serverIDs)}")
+            print(scanAllfromGeneralbyServerID(id,lvl, chunksize, days, fail_thresh))
+            print("\n\n ############## \n\n")
+            servercount += 1
+    return "Done for {} Servers.".format(servercount)
+
+def calcStatsforAllServers(exceptios={}):
+    serverIDs = dbc.getNumberofServers()
+    servercount = 0
+
+    print(f"Attempting to Calculate BG Stats for {len(ServerIds)} Servers")
+
+    for id in serverIDs:
+        if id in exceptions: print(f"Skipping Server ID {id}")
+        else:
+            print(f"ServerID {id} von {len(serverIDs)}")
+            print(calcStatsforServer(id))
+            print("\n\n ############## \n\n")
+            servercount += 1
+    return "Done for {} Servers.".format(servercount)
+    
+
+
+def displayServerStats(id):
+    server_dict = dbc.getBGServer(id)
+    ir.createServerCharts(server_dict)
+
+
 if __name__ == "__main__":
     #print(scanServer(16))
     #print(scanServer(39))
@@ -312,6 +350,8 @@ if __name__ == "__main__":
     #print(scanServer(3))
     #print(transferAllfromServer(3, 1000, 1))
     #print(scanAllfromGeneralbyServerID(3,120, 1000, 7, 3))
-    print(calcStatsforServer(3))
+    #print(calcStatsforServer(3))
+
+    displayServerStats(3)
 
     print("done.")

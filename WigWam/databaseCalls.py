@@ -496,6 +496,16 @@ def writetoBGServer(DB_bg_dict_list):
     return True    
 
 
+def getBGServer(id):
+    table = Table("BG_Server", metadata, autoload=True, autoload_with=engine)
+    stmt = table.select().where(table.columns.Server_ID == id)
+
+    with engine.connect() as connection:
+
+        result = connection.execute(stmt).fetchall()
+
+    result_dict = [{item[0]:item[1] for item in row.items()} for row in result]
+    return result_dict
 
 if __name__ == "__main__":
 
@@ -559,5 +569,7 @@ if __name__ == "__main__":
     #              "TP_played":11, "TP_won":11, "TP_flags_cap":11, "TP_flags_ret":11, "WS_played":11, "WS_won":11, "WS_flags_cap":11, "WS_flags_ret":11, "SM_played":11,  "SM_won":11,
     #              "TK_played":11, "TK_won":11, "IoC_played":11, "IoC_won":11, "DG_played":11, "DG_won":11})          
     #bulkWriteBG(bgdictlist)
+
+    getBGServer(3)
 
     print("done.")
