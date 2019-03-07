@@ -303,7 +303,7 @@ def scanAllfromGeneral(lvl=120, chunksize=1000, days=14, fail_thresh=3, language
             servercount += 1
     return "Done for {} Servers.".format(servercount)
 
-def calcStatsforAllServers(languge="German", exceptions={}):
+def calcStatsforAllServers(language="German", exceptions={}):
     serverIDs = dbc.getNumberofServers(language)
     servercount = 0
 
