@@ -27,8 +27,8 @@ def scanServer(id):  #fetches charname and realm for the selected server via the
 
     return "Server {} scanned successfully".format(server)
 
-def scanAllServers(exceptions={}):  #fetches all server_ids and loops over all of them with scanServer(id)
-    serverIDs = dbc.getNumberofServers()
+def scanAllServers(language="German", exceptions={}):  #fetches all server_ids and loops over all of them with scanServer(id)
+    serverIDs = dbc.getNumberofServers(language)
     servercount = 0
     for id in serverIDs:
         if id in exceptions: print(f"Skipping Server ID {id}")
@@ -181,8 +181,8 @@ def splitResultlist(resultlist):    #splits into goodlist and badlist for bulktr
     return (goodlist, badlist)
 
 
-def transferAllfromAllServers(exceptions={}):   #calls transferAllfromServer() for every server in serverlist db
-    serverIDs = dbc.getNumberofServers()
+def transferAllfromAllServers(language="German", exceptions={}):   #calls transferAllfromServer() for every server in serverlist db
+    serverIDs = dbc.getNumberofServers(language)
     servercount = 0
 
     for id in serverIDs:
@@ -194,8 +194,8 @@ def transferAllfromAllServers(exceptions={}):   #calls transferAllfromServer() f
             servercount += 1
     return "Done. Scanned {} Servers.".format(servercount)
 
-def printAllServerCounts():                     #prints total entries + untransferred entries for all servers in serverlist db.
-    serverIDs = dbc.getNumberofServers()
+def printAllServerCounts(language="German"):                     #prints total entries + untransferred entries for all servers in serverlist db.
+    serverIDs = dbc.getNumberofServers(language)
     print("{:32} Total \t Untransferred".format("Server"))
     for id in serverIDs:
         serverinfo = dbc.getServerbyID(id)
@@ -265,7 +265,7 @@ def calcStatsforServer(id):
     if serverinfo[0] == "error": return f"{serverinfo[1]}"
     if serverinfo[2] == True: return f"Server {serverinfo[0]} is set to \"Skip\"."
 
-    charlist = dbc.getCharsfromGeneral(id, 120, 0, 0, 1, True)
+    charlist = dbc.getCharsfromGeneral(id, 120, 0, 0, 10, True)
 
     idlist = [char["Player_ID"] for char in charlist]
 
@@ -278,7 +278,7 @@ def calcStatsforServer(id):
     print("Extracting and calculating relevant Data from Set")
     general_dict, horde_dict, alliance_dict = ir.createBGDF(charlist, resultlist)
 
-    print("Writing Results to BG_Server BD")
+    print("Writing Results to BG_Server DB")
 
     success = dbc.writetoBGServer([general_dict, horde_dict, alliance_dict])
 
@@ -287,8 +287,8 @@ def calcStatsforServer(id):
     return f"Calculated Stats for Server ID {id}, using {len(resultlist)} entries."
 
 
-def scanAllfromGeneral(lvl=120, chunksize=1000, days=14, fail_thresh=3, exceptions={}):
-    serverIDs = dbc.getNumberofServers()
+def scanAllfromGeneral(lvl=120, chunksize=1000, days=14, fail_thresh=3, language="German", exceptions={}):
+    serverIDs = dbc.getNumberofServers(language)
     servercount = 0
 
     print(f"Attempting to Update and Transfer all Chars from player_general for {len(serverIDs)} Servers")
@@ -303,8 +303,8 @@ def scanAllfromGeneral(lvl=120, chunksize=1000, days=14, fail_thresh=3, exceptio
             servercount += 1
     return "Done for {} Servers.".format(servercount)
 
-def calcStatsforAllServers(exceptions={}):
-    serverIDs = dbc.getNumberofServers()
+def calcStatsforAllServers(languge="German", exceptions={}):
+    serverIDs = dbc.getNumberofServers(language)
     servercount = 0
 
     print(f"Attempting to Calculate BG Stats for {len(serverIDs)} Servers")
@@ -318,10 +318,43 @@ def calcStatsforAllServers(exceptions={}):
             servercount += 1
     return "Done for {} Servers.".format(servercount)
     
+def calcAggregatedServerStats(language="German", exceptions={}):
+    serverIDs = dbc.getNumberofServers(language)
+    servercount = 0
+    statlist = []
 
+    print("Fetching BG Stats from all Servers.")
+
+    for id in serverIDs:
+        serverinfo = dbc.getServerbyID(id)
+        if id in exceptions: print(f"Skipping Server ID {id}")
+        elif serverinfo[0] == "error": print(f"Server ID {id}: {serverinfo[1]}")
+        elif serverinfo[2] == True: print(f"Server {serverinfo[0]} is set to \"Skip\".")
+        else: 
+            for dict in dbc.getBGServer(id, newest_only=True):
+                statlist.append(dict)
+
+ 
+    print("Calculating aggregated Server BG Stats")
+    resultlist = ir.aggregateServerBGs(statlist)
+
+    print("Writing Results to BG_Server DB")
+
+    success = dbc.writetoBGServer(resultlist)
+
+    print(f"Written to DB sucessfully: {success}")
+
+    return True
 
 def displayServerStats(id):
+    print(f"Creating Charts for Server ID {id}")
+    #serverinfo = dbc.getServerbyID(id)
+    #if serverinfo[0] == "error": return f"{serverinfo[1]}"
+    #if serverinfo[2] == True: return f"Server {serverinfo[0]} is set to \"Skip\"."
     server_dict = dbc.getBGServer(id)
+    print("\tCreating Difference Chart")
+    ir.createDiffCharts(server_dict)
+    print("\tCreating latest Stats Chart")
     ir.createServerCharts(server_dict)
 
 
@@ -357,6 +390,8 @@ if __name__ == "__main__":
     #print(scanAllfromGeneralbyServerID(3,120, 1000, 7, 3))
     #print(calcStatsforServer(3))
 
-    displayServerStats(3)
+    displayServerStats(0)
 
+    #calcAggregatedServerStats()
+    #print(calcStatsforAllServers())
     print("done.")

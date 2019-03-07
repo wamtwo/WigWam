@@ -356,9 +356,48 @@ def createServerCharts(bg_dict):
     plotServerBGs(df_general, df_horde, df_alliance)
     print("\tDone.")
 
-    df_played = df[["BG_played", "BG_played_c"]].unstack(level="Type")
+    #df_played = df[["BG_played", "BG_played_c"]].unstack(level="Type")
     #print(df_played)
 
+def createDiffCharts(bg_dict):
+    df = pd.DataFrame(bg_dict)
+    df = df.set_index(["Type", df["scanned_on"]]).sort_index()
+
+    col_list = ["BG_played", "BG_won", "BG_played_c", "BG_won_c", "AV_played", "AV_won","AB_played", "AB_won", "Gil_played", "Gil_won", "EotS_played", "EotS_won",
+                "SS_played", "SS_won", "TP_played", "TP_won", "WS_played", "WS_won", "SM_played", "SM_won", "TK_played", "TK_won", "IoC_played", "IoC_won", "DG_played", "DG_won"]
+
+    #df_general = df[col_list].loc[("General")].select_dtypes(include=["int64", "float64"]).diff()
+    #df_general_diff = df[col_list].loc[("General")].diff().loc[df.index.levels[1].max()]
+    #df_general_diff["Type", "entries"] = "General", 
+    #df_horde_diff = df[col_list].loc[("Horde")].diff().loc[df.index.levels[1].max()]
+    #df_horde_diff["Type"] = "Horde"
+    #df_alliance_diff = df[col_list].loc[("Alliance")].diff().loc[df.index.levels[1].max()]
+    #df_alliance_diff["Type"] = "Alliance"
+
+    df_general_diff = df[col_list +["entries"]].loc[("General")]
+    df_general_diff[col_list] = df_general_diff[col_list].diff()
+    df_general_diff["Type"] = "General"
+    df_general_diff = df_general_diff.loc[df_general_diff.index.max()]
+
+    df_horde_diff = df[col_list +["entries"]].loc[("Horde")]
+    df_horde_diff[col_list] = df_horde_diff[col_list].diff()
+    df_horde_diff["Type"] = "Horde"
+    df_horde_diff = df_horde_diff.loc[df_horde_diff.index.max()]
+
+    df_alliance_diff = df[col_list +["entries"]].loc[("Alliance")]
+    df_alliance_diff[col_list] = df_alliance_diff[col_list].diff()
+    df_alliance_diff["Type"] = "Alliance"
+    df_alliance_diff = df_alliance_diff.loc[df_alliance_diff.index.max()]
+
+    df_general_diff = refineDiffDf(df_general_diff)
+    df_horde_diff = refineDiffDf(df_horde_diff)
+    df_alliance_diff = refineDiffDf(df_alliance_diff)
+
+    #print(df_general_diff)
+
+    plotServerBGs(df_general_diff, df_horde_diff, df_alliance_diff)
+
+    print("done.")
 
 def plotServerBGs(dfg, dfh, dfa):
     filename = "figures/" + str(dfg["Server_ID"]) + "_BG" + "_.svg"
@@ -367,15 +406,15 @@ def plotServerBGs(dfg, dfh, dfa):
     gs1 = GridSpec(9,7)
     #total BGs General
     sizes = (dfg["BG_won_mean"], dfg["BG_played_mean"] - dfg["BG_won_mean"])
-    plotBGPie(gs1[0:2, 0:2], sizes, f"Total BGs \n({dfg['BG_played']} to {dfg['BG_played'] - dfg['BG_won']})", True)
+    plotBGPie(gs1[0:2, 0:2], sizes, f"Total BGs \n({dfg['BG_won']} to {dfg['BG_played'] - dfg['BG_won']})", True)
 
     #total BGs Horde
     sizes = (dfh["BG_won_mean"], dfh["BG_played_mean"] - dfh["BG_won_mean"])
-    plotBGPie(gs1[0:2, 2:4], sizes, f"Total BGs Horde \n({dfh['BG_played']} to {dfh['BG_played'] - dfh['BG_won']})", True)
+    plotBGPie(gs1[0:2, 2:4], sizes, f"Total BGs Horde \n({dfh['BG_won']} to {dfh['BG_played'] - dfh['BG_won']})", True)
 
     #total BGs Alliance
     sizes = (dfa["BG_won_mean"], dfa["BG_played_mean"] - dfa["BG_won_mean"])
-    plotBGPie(gs1[0:2, 4:7], sizes, f"Total BGs Alliance \n({dfa['BG_played']} to {dfa['BG_played'] - dfa['BG_won']})", True, True)
+    plotBGPie(gs1[0:2, 4:7], sizes, f"Total BGs Alliance \n({dfa['BG_won']} to {dfa['BG_played'] - dfa['BG_won']})", True, True)
 
     #calculated general
     sizes = (dfg["BG_won_c_mean"], dfg["BG_played_c_mean"] - dfg["BG_won_c_mean"])
@@ -550,9 +589,12 @@ def plotServerBGs(dfg, dfh, dfa):
     return True
 
 def plotBGPie(gs, sizes, title, isBig=False, isLegend=False):
-    colors = ["lightgreen", "lightcoral"]
+    colors = ["limegreen", "lightgrey"]
     ax = plt.subplot(gs)
-    if sizes[1] + sizes[0] == 0: plt.pie([1], shadow=False, startangle=135, colors=["grey"], counterclock=False)
+    if sizes[1] + sizes[0] == 0: texts, autotext = ax.pie([1], shadow=False, startangle=135, colors=["grey"], counterclock=False)
+    elif sizes[0] < 1 or sizes[1] < 1:
+        sizes = [sizes[0]*10, sizes[1]*10]
+        wedges, texts, autotext = ax.pie(sizes, shadow=False, autopct=lambda p: "{:.2f}%\n(Ø {:,.2f})".format(p,p * sum(sizes)/1000), startangle=135, colors=colors, counterclock=False )
     else: wedges, texts, autotext = ax.pie(sizes, shadow=False, autopct=lambda p: "{:.2f}%\n(Ø {:,.2f})".format(p,p * sum(sizes)/100), startangle=135, colors=colors, counterclock=False )
     plt.axis("equal")
     if isLegend == True: plt.legend(["Win","Loss"])
@@ -560,3 +602,213 @@ def plotBGPie(gs, sizes, title, isBig=False, isLegend=False):
     else: 
         plt.title(title, y=0.85, fontsize=8)
         plt.setp(autotext, size=8)
+
+
+def aggregateServerBGs(bg_dict_list):
+    df = pd.DataFrame(bg_dict_list)
+    #print(df.head())
+    resultlist = []
+
+    df = df.set_index(["Type", "Server_ID"], drop=False).sort_index()
+    #print(df.head())
+
+    df_general = df.loc[("General")]
+    df_horde = df.loc[("Horde")]
+    df_alliance = df.loc[("Alliance")]
+
+    dfset = [df_general, df_horde, df_alliance]
+
+    for dfx in dfset:
+        dbdict = {}
+        for entry in dfx:            
+            if "mean" in entry: dbdict[entry] = dfx[entry[:-5]].sum() / dfx["entries"].sum()
+            elif "max" in entry: dbdict[entry] = int(dfx[entry].max())
+            elif "75" in entry: dbdict[entry] = dfx[entry].mean() #inaccurate...
+            elif "Server_ID" in entry: dbdict[entry] = int(0)
+            elif "Type" in entry: dbdict[entry] = dfx[entry].iloc[0]
+            elif "most_n" in entry: dbdict[entry] = dfx[[entry, entry[:-2]+"_c"]].groupby(entry).sum().sort_values(by=entry[:-2]+"_c", ascending=False).index[0]
+            elif "most_c_max" in entry: dbdict[entry] = int(dfx[entry].max())
+            elif "most_c" in entry: dbdict[entry] = int(dfx[[entry[:-2]+"_n", entry]].groupby(entry[:-2]+"_n").sum().sort_values(by=entry, ascending=False)[entry].iloc[0])
+            elif "scanned" in entry: pass          
+            else: dbdict[entry] = int(dfx[entry].sum())
+
+        resultlist.append(dbdict)
+
+
+
+#        resultlist.append({"Server_ID": 0,
+#                           "Type": dfx["Type"].iloc[0],
+#                           "BG_played": dfx["BG_played"].sum(),
+#                           "BG_played_mean":int(dfx["BG_played"].mean()),
+#                           "BG_played_max": dfx["BG_played_max"].max(),
+#                           "BG_played_75": int(dfx["BG_played_75"].mean()),
+#                           "BG_won": dfx["BG_won"].sum(),
+#                           "BG_won_mean":int(dfx["BG_won"].mean()),
+#                           "BG_won_max": dfx["BG_won_max"].max(),
+#                           "BG_won_75": int(dfx["BG_won_75"].mean()),
+#                           "BG_played_c": dfx["BG_played_c"].sum(),
+#                           "BG_played_c_mean":int(dfx["BG_played_c"].mean()),
+#                           "BG_played_c_max": dfx["BG_played_c_max"].max(),
+#                           "BG_played_c_75": int(dfx["BG_played_c_75"].mean()),
+#                           "AV_played": dfx["AV_played"].sum(),
+#                           "AV_played_mean":int(dfx["AV_played"].mean()),
+#                           "AV_played_max": dfx["AV_played_max"].max(),
+#                           "AV_played_75": int(dfx["AV_played_75"].mean()),
+#                           "AV_won": dfx["AV_won"].sum(),
+#                           "AV_won_mean":int(dfx["AV_won"].mean()),
+#                           "AV_won_max": dfx["AV_won_max"].max(),
+#                           "AV_won_75": int(dfx["AV_won_75"].mean()),
+#                           "AV_tower_def": dfx["AV_tower_def"].sum(),
+#                           "AV_tower_def_mean":int(dfx["AV_tower_def"].mean()),
+#                           "AV_tower_def_max": dfx["AV_tower_def_max"].max(),
+#                           "AV_tower_def_75": int(dfx["AV_tower_def_75"].mean()),
+#                           "AV_tower_cap": dfx["AV_tower_cap"].sum(),
+#                           "AV_tower_cap_mean":int(dfx["AV_tower_cap"].mean()),
+#                           "AV_tower_cap_max": dfx["AV_tower_cap_max"].max(),
+#                           "AV_tower_cap_75": int(dfx["AV_tower_cap_75"].mean()),
+#                           "AB_played": dfx["AB_played"].sum(),
+#                           "AB_played_mean":int(dfx["AB_played"].mean()),
+#                           "AB_played_max": dfx["AB_played_max"].max(),
+#                           "AB_played_75": int(dfx["AB_played_75"].mean()),
+#                           "AB_won": dfx["AB_won"].sum(),
+#                           "AB_won_mean":int(dfx["AB_won"].mean()),
+#                           "AB_won_max": dfx["AB_won_max"].max(),
+#                           "AB_won_75": int(dfx["AB_won_75"].mean()),
+#                           "Gil_played": dfx["Gil_played"].sum(),
+#                           "Gil_played_mean":int(dfx["Gil_played"].mean()),
+#                           "Gil_played_max": dfx["Gil_played_max"].max(),
+#                           "Gil_played_75": int(dfx["Gil_played_75"].mean()),
+#                           "Gil_won": dfx["Gil_won"].sum(),
+#                           "Gil_won_mean":int(dfx["Gil_won"].mean()),
+#                           "Gil_won_max": dfx["Gil_won_max"].max(),
+#                           "Gil_won_75": int(dfx["Gil_won_75"].mean()),
+#                           "EotS_played": dfx["EotS_played"].sum(),
+#                           "EotS_played_mean":int(dfx["EotS_played"].mean()),
+#                           "EotS_played_max": dfx["EotS_played_max"].max(),
+#                           "EotS_played_75": int(dfx["EotS_played_75"].mean()),
+#                           "EotS_won": dfx["EotS_won"].sum(),
+#                           "EotS_won_mean":int(dfx["EotS_won"].mean()),
+#                           "EotS_won_max": dfx["EotS_won_max"].max(),
+#                           "EotS_won_75": int(dfx["EotS_won_75"].mean()),
+#                           "EotS_flags": dfx["EotS_flags"].sum(),
+#                           "EotS_flags_mean":int(dfx["EotS_flags"].mean()),
+#                           "EotS_flags_max": dfx["EotS_flags_max"].max(),
+#                           "EotS_flags_75": int(dfx["EotS_flags_75"].mean()),
+#                           "EotS_played_est": dfx["EotS_played_est"].sum(),
+#                           "EotS_played_est_mean":int(dfx["EotS_played_est"].mean()),
+#                           "EotS_played_est_max": dfx["EotS_played_est_max"].max(),
+#                           "EotS_played_est_75": int(dfx["EotS_played_est_75"].mean()),
+#                           "EotS_won_est": dfx["EotS_won_est"].sum(),
+#                           "EotS_won_est_mean":int(dfx["EotS_won_est"].mean()),
+#                           "EotS_won_est_max": dfx["EotS_won_est_max"].max(),
+#                           "EotS_won_est_75": int(dfx["EotS_won_est_75"].mean()),
+#                           "EotS_played_def": dfx["EotS_played_def"].sum(),
+#                           "EotS_played_def_mean":int(dfx["EotS_played_def"].mean()),
+#                           "EotS_played_def_max": dfx["EotS_played_def_max"].max(),
+#                           "EotS_played_def_75": int(dfx["EotS_played_def_75"].mean()),
+#                           "EotS_won_def": dfx["EotS_won_def"].sum(),
+#                           "EotS_won_def_mean":int(dfx["EotS_won_def"].mean()),
+#                           "EotS_won_def_max": dfx["EotS_won_def_max"].max(),
+#                           "EotS_won_def_75": int(dfx["EotS_won_def_75"].mean()),
+#                           "SS_played": dfx["SS_played"].sum(),
+#                           "SS_played_mean":int(dfx["SS_played"].mean()),
+#                           "SS_played_max": dfx["SS_played_max"].max(),
+#                           "SS_played_75": int(dfx["SS_played_75"].mean()),
+#                           "SS_won": dfx["SS_won"].sum(),
+#                           "SS_won_mean":int(dfx["SS_won"].mean()),
+#                           "SS_won_max": dfx["SS_won_max"].max(),
+#                           "SS_won_75": int(dfx["SS_won_75"].mean()),
+#                           "SotA_played": dfx["SotA_played"].sum(),
+#                           "SotA_played_mean":int(dfx["SotA_played"].mean()),
+#                           "SotA_played_max": dfx["SotA_played_max"].max(),
+#                           "SotA_played_75": int(dfx["SotA_played_75"].mean()),
+#                           "SotA_won": dfx["SotA_won"].sum(),
+#                           "SotA_won_mean":int(dfx["SotA_won"].mean()),
+#                           "SotA_won_max": dfx["SotA_won_max"].max(),
+#                           "SotA_won_75": int(dfx["SotA_won_75"].mean()),
+#                           "TP_played": dfx["TP_played"].sum(),
+#                           "TP_played_mean":int(dfx["TP_played"].mean()),
+#                           "TP_played_max": dfx["TP_played_max"].max(),
+#                           "TP_played_75": int(dfx["TP_played_75"].mean()),
+#                           "TP_won": dfx["TP_won"].sum(),
+#                           "TP_won_mean":int(dfx["TP_won"].mean()),
+#                           "TP_won_max": dfx["TP_won_max"].max(),
+#                           "TP_won_75": int(dfx["TP_won_75"].mean()),
+#                           "TP_flags_cap": dfx["TP_flags_cap"].sum(),
+#                           "TP_flags_cap_mean":int(dfx["TP_flags_cap"].mean()),
+#                           "TP_flags_cap_max": dfx["TP_flags_cap_max"].max(),
+#                           "TP_flags_cap_75": int(dfx["TP_flags_cap_75"].mean()),
+#                           "TP_flags_ret": dfx["TP_flags_ret"].sum(),
+#                           "TP_flags_ret_mean":int(dfx["TP_flags_ret"].mean()),
+#                           "TP_flags_ret_max": dfx["TP_flags_ret_max"].max(),
+#                           "TP_flags_ret_75": int(dfx["TP_flags_ret_75"].mean()),
+#                           "WS_played": dfx["WS_played"].sum(),
+#                           "WS_played_mean":int(dfx["WS_played"].mean()),
+#                           "WS_played_max": dfx["WS_played_max"].max(),
+#                           "WS_played_75": int(dfx["WS_played_75"].mean()),
+#                           "WS_won": dfx["WS_won"].sum(),
+#                           "WS_won_mean":int(dfx["WS_won"].mean()),
+#                           "WS_won_max": dfx["WS_won_max"].max(),
+#                           "WS_won_75": int(dfx["WS_won_75"].mean()),
+#                           "WS_flags_cap": dfx["WS_flags_cap"].sum(),
+#                           "WS_flags_cap_mean":int(dfx["WS_flags_cap"].mean()),
+#                           "WS_flags_cap_max": dfx["WS_flags_cap_max"].max(),
+#                           "WS_flags_cap_75": int(dfx["WS_flags_cap_75"].mean()),
+#                           "WS_flags_ret": dfx["WS_flags_ret"].sum(),
+#                           "WS_flags_ret_mean":int(dfx["WS_flags_ret"].mean()),
+#                           "WS_flags_ret_max": dfx["WS_flags_ret_max"].max(),
+#                           "WS_flags_ret_75": int(dfx["WS_flags_ret_75"].mean()),
+#                           "TK_played": dfx["TK_played"].sum(),
+#                           "TK_played_mean":int(dfx["TK_played"].mean()),
+#                           "TK_played_max": dfx["TK_played_max"].max(),
+#                           "TK_played_75": int(dfx["TK_played_75"].mean()),
+#                           "TK_won": dfx["TK_won"].sum(),
+#                           "TK_won_mean":int(dfx["TK_won"].mean()),
+#                           "TK_won_max": dfx["TK_won_max"].max(),
+#                           "TK_won_75": int(dfx["TK_won_75"].mean()),
+#                           "IoC_played": dfx["IoC_played"].sum(),
+#                           "IoC_played_mean":int(dfx["IoC_played"].mean()),
+#                           "IoC_played_max": dfx["IoC_played_max"].max(),
+#                           "IoC_played_75": int(dfx["IoC_played_75"].mean()),
+#                           "IoC_won": dfx["IoC_won"].sum(),
+#                           "IoC_won_mean":int(dfx["IoC_won"].mean()),
+#                           "IoC_won_max": dfx["IoC_won_max"].max(),
+#                           "IoC_won_75": int(dfx["IoC_won_75"].mean()),
+#                           "DG_played": dfx["DG_played"].sum(),
+#                           "DG_played_mean":int(dfx["DG_played"].mean()),
+#                           "DG_played_max": dfx["DG_played_max"].max(),
+#                           "DG_played_75": int(dfx["DG_played_75"].mean()),
+#                           "DG_won": dfx["DG_won"].sum(),
+#                           "DG_won_mean":int(dfx["DG_won"].mean()),
+#                           "DG_won_max": dfx["DG_won_max"].max(),
+#                           "DG_won_75": int(dfx["DG_won_75"].mean()),
+#                           "played_most_n": dfx[["played_most_n","played_most_c"]].groupby("played_most_n").sum().sort_values(by="played_most_c", ascending=False).index[0],
+#                           "played_most_c": int(dfx[["played_most_n","played_most_c"]].groupby("played_most_n").sum().sort_values(by="played_most_c", ascending=False)["played_most_c"].iloc[0]),
+#                           "played_most_c_mean": int(dfx["played_most_c"].mean()),
+#                           "played_most_c_max": dfx["played_most_c_max"].max(),
+#                           "played_most_c_75": int(dfx["played_most_c_75"].mean()),
+#                           "won_most_n": dfx[["won_most_n","won_most_c"]].groupby("won_most_n").sum().sort_values(by="won_most_c", ascending=False).index[0],
+#                           "won_most_c": int(dfx[["won_most_n","won_most_c"]].groupby("won_most_n").sum().sort_values(by="won_most_c", ascending=False)["won_most_c"].iloc[0]),
+#                           "won_most_c_mean": int(dfx["won_most_c"].mean()),
+#                           "won_most_c_max": dfx["won_most_c_max"].max(),
+#                           "won_most_c_75": int(dfx["won_most_c_75"].mean()),
+#                           "entries":dfx["entries"].sum()
+#                           })
+
+
+
+    #print(df_general.head())
+    #print(df_general.describe())
+
+    return resultlist
+
+def refineDiffDf(df):
+    for entry in df.index:
+        if entry not in ("Type", "entries"):
+            df[entry +"_mean"] = (df[entry] / df["entries"]) *100
+    df["EotS_played_est_mean"] = 0
+    df["EotS_won_est_mean"] = 0
+    df["SotA_played_mean"] = 0
+    df["SotA_won_mean"] = 0
+    df["Server_ID"] = "0_diff"
+    return df

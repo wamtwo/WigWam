@@ -153,9 +153,9 @@ def updateServerScanbyID(id): #updates the "scanned on" row in serverlist
         result = connection.execute(stmt)
     return "Updated Scan-Date for Server_ID {}".format(id)
 
-def getNumberofServers():   #return all Server_IDs from serverlist
+def getNumberofServers(language):   #return all Server_IDs from serverlist
     table = Table("serverlist", metadata, autoload=True, autoload_with=engine)
-    stmt = select([table.columns.Server_ID]).order_by(table.columns.Server_ID.asc())
+    stmt = select([table.columns.Server_ID]).order_by(table.columns.Server_ID.asc()).where(table.columns.Language == language)
     with engine.connect() as connection:
         result = connection.execute(stmt).fetchall()
     return [row["Server_ID"] for row in result]
@@ -496,15 +496,28 @@ def writetoBGServer(DB_bg_dict_list):
     return True    
 
 
-def getBGServer(id):
+def getBGServer(id, newest_only=False):
     table = Table("BG_Server", metadata, autoload=True, autoload_with=engine)
     stmt = table.select().where(table.columns.Server_ID == id)
+    if newest_only == True:
+        with engine.connect() as connection:
+            stmt = select([table.columns.Type.distinct()]).where(table.columns.Server_ID == id)
+            typerslt = [row["Type"] for row in connection.execute(stmt).fetchall()]
+            resultlist = []
+            
+            for stattype in typerslt:
+                stmt = table.select().where(and_(table.columns.Server_ID == id, table.columns.Type == stattype))
+                stmt = stmt.order_by(table.columns.scanned_on.desc()).limit(1)
+                resultlist.append(connection.execute(stmt).fetchall())
 
-    with engine.connect() as connection:
+            result_dict = [{item[0]:item[1] for item in row[0].items()} for row in resultlist]
 
-        result = connection.execute(stmt).fetchall()
+    else:
+        with engine.connect() as connection:
 
-    result_dict = [{item[0]:item[1] for item in row.items()} for row in result]
+            result = connection.execute(stmt).fetchall()
+
+        result_dict = [{item[0]:item[1] for item in row.items()} for row in result]
     return result_dict
 
 if __name__ == "__main__":
@@ -570,6 +583,6 @@ if __name__ == "__main__":
     #              "TK_played":11, "TK_won":11, "IoC_played":11, "IoC_won":11, "DG_played":11, "DG_won":11})          
     #bulkWriteBG(bgdictlist)
 
-    getBGServer(3)
+    getBGServer(3, newest_only=True)
 
     print("done.")
