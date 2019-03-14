@@ -441,8 +441,8 @@ def getAllChars(realm,region):
                     for j in range(len(t2)):
                         #print(t2[j]["character"]["name"])
                         if "realm" in t2[j]["character"]:
-                            komlist2.append((str(t2[j]["character"]["realm"]).lower(),t2[j]["character"]["name"]))
                             if t2[j]["character"]["level"]==120:
+                                komlist2.append((str(t2[j]["character"]["realm"]).lower(),t2[j]["character"]["name"]))
                                 cou120=cou120+1
             except Exception as exc:
                 print("Exception {}".format(exc))

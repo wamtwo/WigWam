@@ -336,7 +336,7 @@ def calcAggregatedServerStats(language="German", exceptions={}):
 
  
     print("Calculating aggregated Server BG Stats")
-    resultlist = ir.aggregateServerBGs(statlist)
+    resultlist = ir.aggregateServerBGs(statlist, language)
 
     print("Writing Results to BG_Server DB")
 

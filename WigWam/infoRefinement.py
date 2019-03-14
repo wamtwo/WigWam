@@ -604,10 +604,14 @@ def plotBGPie(gs, sizes, title, isBig=False, isLegend=False):
         plt.setp(autotext, size=8)
 
 
-def aggregateServerBGs(bg_dict_list):
+def aggregateServerBGs(bg_dict_list, language):
     df = pd.DataFrame(bg_dict_list)
     #print(df.head())
     resultlist = []
+
+    if language == "all": s_id = int(0)
+    elif language == "german": s_id = int(1001)
+    elif language == "english": s_id = int(1002)
 
     df = df.set_index(["Type", "Server_ID"], drop=False).sort_index()
     #print(df.head())
@@ -624,7 +628,7 @@ def aggregateServerBGs(bg_dict_list):
             if "mean" in entry: dbdict[entry] = dfx[entry[:-5]].sum() / dfx["entries"].sum()
             elif "max" in entry: dbdict[entry] = int(dfx[entry].max())
             elif "75" in entry: dbdict[entry] = dfx[entry].mean() #inaccurate...
-            elif "Server_ID" in entry: dbdict[entry] = int(0)
+            elif "Server_ID" in entry: dbdict[entry] = s_id
             elif "Type" in entry: dbdict[entry] = dfx[entry].iloc[0]
             elif "most_n" in entry: dbdict[entry] = dfx[[entry, entry[:-2]+"_c"]].groupby(entry).sum().sort_values(by=entry[:-2]+"_c", ascending=False).index[0]
             elif "most_c_max" in entry: dbdict[entry] = int(dfx[entry].max())
