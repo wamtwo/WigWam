@@ -377,21 +377,25 @@ def createDiffCharts(bg_dict):
     df_general_diff = df[col_list +["entries"]].loc[("General")]
     df_general_diff[col_list] = df_general_diff[col_list].diff()
     df_general_diff["Type"] = "General"
+    df_general_diff["Server_ID"] = str(df["Server_ID"][0])
     df_general_diff = df_general_diff.loc[df_general_diff.index.max()]
 
     df_horde_diff = df[col_list +["entries"]].loc[("Horde")]
     df_horde_diff[col_list] = df_horde_diff[col_list].diff()
     df_horde_diff["Type"] = "Horde"
+    df_horde_diff["Server_ID"] = str(df["Server_ID"][0])
     df_horde_diff = df_horde_diff.loc[df_horde_diff.index.max()]
 
     df_alliance_diff = df[col_list +["entries"]].loc[("Alliance")]
     df_alliance_diff[col_list] = df_alliance_diff[col_list].diff()
     df_alliance_diff["Type"] = "Alliance"
+    df_alliance_diff["Server_ID"] = str(df["Server_ID"][0])
     df_alliance_diff = df_alliance_diff.loc[df_alliance_diff.index.max()]
 
     df_general_diff = refineDiffDf(df_general_diff)
     df_horde_diff = refineDiffDf(df_horde_diff)
     df_alliance_diff = refineDiffDf(df_alliance_diff)
+
 
     #print(df_general_diff)
 
@@ -610,8 +614,8 @@ def aggregateServerBGs(bg_dict_list, language):
     resultlist = []
 
     if language == "all": s_id = int(0)
-    elif language == "german": s_id = int(1001)
-    elif language == "english": s_id = int(1002)
+    elif language.lower() == "german": s_id = int(1001)
+    elif language.lower() == "english": s_id = int(1002)
 
     df = df.set_index(["Type", "Server_ID"], drop=False).sort_index()
     #print(df.head())
@@ -808,11 +812,11 @@ def aggregateServerBGs(bg_dict_list, language):
 
 def refineDiffDf(df):
     for entry in df.index:
-        if entry not in ("Type", "entries"):
-            df[entry +"_mean"] = (df[entry] / df["entries"]) *100
+        if entry not in ("Type", "entries", "Server_ID"):
+            df[entry +"_mean"] = (df[entry] / df["entries"]) *1000
     df["EotS_played_est_mean"] = 0
     df["EotS_won_est_mean"] = 0
     df["SotA_played_mean"] = 0
     df["SotA_won_mean"] = 0
-    df["Server_ID"] = "0_diff"
+    df["Server_ID"] = df["Server_ID"] + "_diff"
     return df

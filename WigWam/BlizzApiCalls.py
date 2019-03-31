@@ -523,7 +523,7 @@ def getBulkBgsforGeneral(charlist):
     exceptioncount = 0
 
 
-    result = playerIDgetBGs(charlist[3])
+    #result = playerIDgetBGs(charlist[3])
     with concurrent.futures.ThreadPoolExecutor(max_workers=WWSettings.workerz) as executor:
         
         task = (executor.submit(playerIDgetBGs, charinfo) for charinfo in charlist)

@@ -361,7 +361,7 @@ def displayServerStats(id):
 if __name__ == "__main__":
     #print(scanServer(16))
     #print(scanServer(39))
-    #print(scanAllServers())
+
 
     #print("getting chars")
     #transferCharbyServerID(14, chunksize=100)
@@ -390,8 +390,24 @@ if __name__ == "__main__":
     #print(scanAllfromGeneralbyServerID(3,120, 1000, 7, 3))
     #print(calcStatsforServer(3))
 
-    displayServerStats(0)
+    #displayServerStats("1002")
 
-    #calcAggregatedServerStats()
-    #print(calcStatsforAllServers())
+    #calcAggregatedServerStats(language="English")
+    #print(calcStatsforAllServers(language="English"))
+
+    print(scanAllServers(language="german"))
+    print(scanAllServers(language="english"))
+    #print(transferAllfromAllServers(language="german"))
+    #print(transferAllfromAllServers(language="English"))
+    #print(scanAllfromGeneral(language="german", days=6))
+    #print(scanAllfromGeneral(language="English", days=6))
+    #print(calcStatsforAllServers(language="German"))
+    #print(calcStatsforAllServers(language="English"))
+    #calcAggregatedServerStats(language="German")
+    #calcAggregatedServerStats(language="English")
+    #displayServerStats("1001")
+    #displayServerStats("1002")
+
+
+
     print("done.")
