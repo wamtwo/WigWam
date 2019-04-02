@@ -33,6 +33,7 @@ def scanAllServers(language="German", exceptions={}):  #fetches all server_ids a
     for id in serverIDs:
         if id in exceptions: print(f"Skipping Server ID {id}")
         else:
+            print(f"ServerID {id} of {max(serverIDs)} - ({servercount+1}/{len(serverIDs)})")
             print(scanServer(id))
             print("\n\n ############## \n\n")
             servercount += 1
@@ -188,7 +189,7 @@ def transferAllfromAllServers(language="German", exceptions={}):   #calls transf
     for id in serverIDs:
         if id in exceptions: print(f"Skipping Server ID {id}")
         else:
-            print(f"ServerID {id} von {len(serverIDs)}")
+            print(f"ServerID {id} of {max(serverIDs)} - ({servercount+1}/{len(serverIDs)})")
             print(transferAllfromServer(id,1000))
             print("\n\n ############## \n\n")
             servercount += 1
@@ -297,7 +298,7 @@ def scanAllfromGeneral(lvl=120, chunksize=1000, days=14, fail_thresh=3, language
     for id in serverIDs:
         if id in exceptions: print(f"Skipping Server ID {id}")
         else:
-            print(f"ServerID {id} von {len(serverIDs)}")
+            print(f"ServerID {id} of {max(serverIDs)} - ({servercount+1}/{len(serverIDs)})")
             print(scanAllfromGeneralbyServerID(id,lvl, chunksize, days, fail_thresh))
             print("\n\n ############## \n\n")
             servercount += 1
@@ -312,7 +313,7 @@ def calcStatsforAllServers(language="German", exceptions={}):
     for id in serverIDs:
         if id in exceptions: print(f"Skipping Server ID {id}")
         else:
-            print(f"ServerID {id} von {len(serverIDs)}")
+            print(f"ServerID {id} of {max(serverIDs)} - ({servercount+1}/{len(serverIDs)})")
             print(calcStatsforServer(id))
             print("\n\n ############## \n\n")
             servercount += 1
