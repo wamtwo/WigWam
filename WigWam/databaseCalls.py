@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.functions import now, count
 from sqlalchemy.sql import and_, or_
 import datetime
+import infoRefinement as ir
 
 #engine = create_engine("mssql+pyodbc://" + username + ":" + password + "@wigwam.database.windows.net/BzApiDB?driver=SQL+Server+Native+Client+11.0")
 engine = create_engine(WWSettings.engineString, pool_size=30)
@@ -417,8 +418,9 @@ def bulkWriteBG(bgdictlist):    #writes a list of chars into the main table
 
                     stmt_select = table.select().where(table.columns.Player_ID == bgdict["Player_ID"])
                     result = connection.execution_options(autocommit=False).execute(stmt_select).fetchall()
-                    if len(result) == 0: connection.execution_options(autocommit=False).execute(stmt_insert, bgdict)
+                    if len(result) == 0: connection.execution_options(autocommit=False).execute(stmt_insert, bgdict)  #char noch nicht in DB -> wird reingeschrieben
                     if len(result) == 1:
+                        ir.calcBgChange(bgdict, result)
                         stmt_update = table.update().where(table.columns.Player_ID == bgdict.pop("Player_ID"))
                         bgdict["scanned_on"] = datetime.datetime.now()
                         connection.execution_options(autocommit=False).execute(stmt_update, bgdict)
@@ -428,7 +430,7 @@ def bulkWriteBG(bgdictlist):    #writes a list of chars into the main table
                         return False
                 print("\nSuccess!")
 
-            except Exception as exc:                     #Rollback on exception so no "untracked" entries will be writting into DB
+            except Exception as exc:                     #Rollback on exception so no "untracked" entries will be written into DB
                 print("\nException occurred")
                 trans.rollback()
                 return False
@@ -438,6 +440,9 @@ def bulkWriteBG(bgdictlist):    #writes a list of chars into the main table
                 return True
 
     return False
+
+
+
 
 def getCountfromGeneral(id, lvl, days, fail_thresh):
     table = Table("player_general", metadata, autoload=True, autoload_with=engine)

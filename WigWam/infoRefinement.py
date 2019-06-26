@@ -642,7 +642,10 @@ def aggregateServerBGs(bg_dict_list, language):
 
         resultlist.append(dbdict)
 
-
+def calcBgChange(bgdict, result):
+    result_dict = { key: result[0][key] for key in result[0].keys() }
+    if result_dict["BG_played"] == bgdict["BG_played"]: print("woar!")
+    return True
 
 #        resultlist.append({"Server_ID": 0,
 #                           "Type": dfx["Type"].iloc[0],
