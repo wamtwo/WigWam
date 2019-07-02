@@ -1,2 +1,2 @@
 # WigWam
-in devolpment
+in development
