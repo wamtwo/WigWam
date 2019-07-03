@@ -472,8 +472,9 @@ def getCountfromGeneral(id, lvl, days, fail_thresh):
     return result[0]["count_1"]
 
 
-def getBGData(idlist):
-    table = Table("player_bg", metadata, autoload=True, autoload_with=engine)
+def getBGData(idlist, change=False):
+    if change == True: table = Table("player_bg_change", metadata, autoload=True, autoload_with=engine)
+    if change == False: table = Table("player_bg", metadata, autoload=True, autoload_with=engine)
     faillist = []
     resultlist = []
 
@@ -502,8 +503,9 @@ def getBGData(idlist):
         print(f"\n\tWritten in {elapsed:.2f} seconds")
     return (resultlist, faillist)
 
-def writetoBGServer(DB_bg_dict_list):
-    table = Table("BG_Server", metadata, autoload=True, autoload_with=engine)
+def writetoBGServer(DB_bg_dict_list, change=False):
+    if change == True: table = Table("BG_server_change", metadata, autoload=True, autoload_with=engine)
+    if change == False: table = Table("BG_server", metadata, autoload=True, autoload_with=engine)
     stmt = insert(table)
 
     with engine.connect() as connection:
@@ -515,8 +517,9 @@ def writetoBGServer(DB_bg_dict_list):
     return True    
 
 
-def getBGServer(id, newest_only=False):
-    table = Table("BG_Server", metadata, autoload=True, autoload_with=engine)
+def getBGServer(id, newest_only=False, change=False):
+    if change == True: table = Table("BG_Server_change", metadata, autoload=True, autoload_with=engine)
+    if change == False: table = Table("BG_Server", metadata, autoload=True, autoload_with=engine)
     stmt = table.select().where(table.columns.Server_ID == id)
     if newest_only == True:
         with engine.connect() as connection:

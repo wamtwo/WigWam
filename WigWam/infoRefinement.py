@@ -323,7 +323,7 @@ def createServerBGEntry(cat, df):
         return {}
     else:
         DB_bg_dict = {}
-        diff_set = {"Unnamed: 0", "Class", "Faction", "Name", "Player_ID", "Race", "Server_ID", "Server_Name", "failed_attempts", "lvl", "scanned_on_x", "scanned_on_y", "played_most_n", "won_most_n"}
+        diff_set = {"Unnamed: 0", "Class", "Faction", "Name", "Player_ID", "Race", "Server_ID", "Server_Name", "failed_attempts", "lvl", "scanned_on_x", "scanned_on_y", "played_most_n", "won_most_n", "scanned_before"}
 
         for item in df:
             if item not in diff_set:
@@ -341,7 +341,7 @@ def createServerBGEntry(cat, df):
 
         return DB_bg_dict
 
-def createServerCharts(bg_dict):
+def createServerCharts(bg_dict, change=False):
     df = pd.DataFrame(bg_dict)
     #print(df.head())
 
@@ -353,7 +353,7 @@ def createServerCharts(bg_dict):
     df_alliance = df.loc[("Alliance", df.index.levels[1].max())]
 
     print(f"\tCreating BG Chart for Server ID {df_general['Server_ID']}...")
-    plotServerBGs(df_general, df_horde, df_alliance)
+    plotServerBGs(df_general, df_horde, df_alliance, change=change)
     print("\tDone.")
 
     #df_played = df[["BG_played", "BG_played_c"]].unstack(level="Type")
@@ -403,8 +403,9 @@ def createDiffCharts(bg_dict):
 
     print("done.")
 
-def plotServerBGs(dfg, dfh, dfa):
-    filename = "figures/" + str(dfg["Server_ID"]) + "_BG" + "_.svg"
+def plotServerBGs(dfg, dfh, dfa, change=False):
+    if change == True: filename = "figures/" + str(dfg["Server_ID"]) + "_BG_change" + "_.svg"
+    if change == False: filename = "figures/" + str(dfg["Server_ID"]) + "_BG" + "_.svg"
 
     fig = plt.figure(figsize=(10,16), frameon=False)
     gs1 = GridSpec(9,7)
@@ -641,6 +642,8 @@ def aggregateServerBGs(bg_dict_list, language):
             else: dbdict[entry] = int(dfx[entry].sum())
 
         resultlist.append(dbdict)
+    return resultlist
+
 
 def calcBgChange(bgdict, result):
     result_dict = { key: result[0][key] for key in result[0].keys() }
@@ -826,7 +829,7 @@ def calcBgChange(bgdict, result):
     #print(df_general.head())
     #print(df_general.describe())
 
-    return resultlist
+
 
 def refineDiffDf(df):
     for entry in df.index:

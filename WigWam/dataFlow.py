@@ -259,7 +259,7 @@ def scanAllfromGeneralbyServerID(id, lvl=120, chunksize=1000, days=7, fail_thres
     return "Done in {} iterations. Elapsed: {:.2f} seconds".format(iterations, elapsed)
 
 
-def calcStatsforServer(id):
+def calcStatsforServer(id, change=False):
     print(f"Fetching Data for Server ID {id}")
 
     serverinfo = dbc.getServerbyID(id)
@@ -272,7 +272,7 @@ def calcStatsforServer(id):
 
     print(f"Fetching BG Data for {len(idlist)} entries.")
 
-    resultlist, faillist = dbc.getBGData(idlist)
+    resultlist, faillist = dbc.getBGData(idlist, change=change)
 
     print(f"Fetched {len(resultlist)} BG entries and failed to fetch {len(faillist)} entries.")
 
@@ -281,7 +281,7 @@ def calcStatsforServer(id):
 
     print("Writing Results to BG_Server DB")
 
-    success = dbc.writetoBGServer([general_dict, horde_dict, alliance_dict])
+    success = dbc.writetoBGServer([general_dict, horde_dict, alliance_dict], change=change)
 
     print(f"Written to DB sucessfully: {success}")
 
@@ -304,7 +304,7 @@ def scanAllfromGeneral(lvl=120, chunksize=1000, days=14, fail_thresh=3, language
             servercount += 1
     return "Done for {} Servers.".format(servercount)
 
-def calcStatsforAllServers(language="German", exceptions={}):
+def calcStatsforAllServers(language="German", exceptions={}, change=False):
     serverIDs = dbc.getNumberofServers(language)
     servercount = 0
 
@@ -314,12 +314,12 @@ def calcStatsforAllServers(language="German", exceptions={}):
         if id in exceptions: print(f"Skipping Server ID {id}")
         else:
             print(f"ServerID {id} of {max(serverIDs)} - ({servercount+1}/{len(serverIDs)})")
-            print(calcStatsforServer(id))
+            print(calcStatsforServer(id, change=change))
             print("\n\n ############## \n\n")
             servercount += 1
     return "Done for {} Servers.".format(servercount)
     
-def calcAggregatedServerStats(language="German", exceptions={}):
+def calcAggregatedServerStats(language="German", exceptions={}, change=False):
     serverIDs = dbc.getNumberofServers(language)
     servercount = 0
     statlist = []
@@ -332,7 +332,7 @@ def calcAggregatedServerStats(language="German", exceptions={}):
         elif serverinfo[0] == "error": print(f"Server ID {id}: {serverinfo[1]}")
         elif serverinfo[2] == True: print(f"Server {serverinfo[0]} is set to \"Skip\".")
         else: 
-            for dict in dbc.getBGServer(id, newest_only=True):
+            for dict in dbc.getBGServer(id, newest_only=True, change=change):
                 statlist.append(dict)
 
  
@@ -341,22 +341,23 @@ def calcAggregatedServerStats(language="German", exceptions={}):
 
     print("Writing Results to BG_Server DB")
 
-    success = dbc.writetoBGServer(resultlist)
+    success = dbc.writetoBGServer(resultlist, change=change)
 
     print(f"Written to DB sucessfully: {success}")
 
     return True
 
-def displayServerStats(id):
+def displayServerStats(id, change=False):
     print(f"Creating Charts for Server ID {id}")
     #serverinfo = dbc.getServerbyID(id)
     #if serverinfo[0] == "error": return f"{serverinfo[1]}"
     #if serverinfo[2] == True: return f"Server {serverinfo[0]} is set to \"Skip\"."
-    server_dict = dbc.getBGServer(id)
-    print("\tCreating Difference Chart")
-    ir.createDiffCharts(server_dict)
+    server_dict = dbc.getBGServer(id, change=change)
+    if change == False:
+        print("\tCreating Difference Chart")
+        ir.createDiffCharts(server_dict)
     print("\tCreating latest Stats Chart")
-    ir.createServerCharts(server_dict)
+    ir.createServerCharts(server_dict, change=change)
 
 
 if __name__ == "__main__":
@@ -400,8 +401,13 @@ if __name__ == "__main__":
     #print(scanAllServers(language="english"))
     #print(transferAllfromAllServers(language="german"))
     #print(transferAllfromAllServers(language="English"))
-    print(scanAllfromGeneral(language="german", days=1))
-    print(scanAllfromGeneral(language="English", days=1))
+    #print(scanAllfromGeneral(language="german", days=1))
+    #print(scanAllfromGeneral(language="English", days=1))
+    #print(calcStatsforAllServers(language="English", change=True))
+    #calcAggregatedServerStats(language="German", change=True)
+    #calcAggregatedServerStats(language="English", change=True)
+    displayServerStats("1001", change=True)
+    displayServerStats("1002", change=True)
 
     #print(calcStatsforAllServers(language="German"))
     #print(calcStatsforAllServers(language="English"))
