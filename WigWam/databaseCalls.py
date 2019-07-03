@@ -405,7 +405,7 @@ def bulkUpdateCharsGeneral(charlist): #updates a chunk of entries for player_gen
 
 def bulkWriteBG(bgdictlist):    #writes a list of chars into the main table
     print(f"Writing {len(bgdictlist)} entries to Database Table \"player_bg\"")
-    table = Table("player_bg", metadata, autoload=True, autoload_with=engine)
+    table = Table("player_bg", metadata, autoload=True, autoload_with=engine)    
     stmt_insert = insert(table)
 
     with engine.connect() as connection:
@@ -418,12 +418,26 @@ def bulkWriteBG(bgdictlist):    #writes a list of chars into the main table
 
                     stmt_select = table.select().where(table.columns.Player_ID == bgdict["Player_ID"])
                     result = connection.execution_options(autocommit=False).execute(stmt_select).fetchall()
-                    if len(result) == 0: connection.execution_options(autocommit=False).execute(stmt_insert, bgdict)  #char noch nicht in DB -> wird reingeschrieben
+                    if len(result) == 0: connection.execution_options(autocommit=False).execute(stmt_insert, bgdict)  #char not in DB -> will be entered
                     if len(result) == 1:
-                        ir.calcBgChange(bgdict, result)
-                        stmt_update = table.update().where(table.columns.Player_ID == bgdict.pop("Player_ID"))
-                        bgdict["scanned_on"] = datetime.datetime.now()
-                        connection.execution_options(autocommit=False).execute(stmt_update, bgdict)
+                        bgChangeTuple = ir.calcBgChange(bgdict, result) #checks for and calculates BG stat changes
+
+                        if bgChangeTuple[0] == False:  # -> if char was inactive, update scan_date, don't update BG Info, set inactive flag
+                            stmt_update = table.update().where(table.columns.Player_ID == bgdict.pop("Player_ID"))
+                            bgdict["scanned_on"] = datetime.datetime.now()
+                            bgdict["active"] = False
+                            connection.execution_options(autocommit=False).execute(stmt_update, bgdict)
+
+                        if bgChangeTuple[0] == True: # -> if char has changes in BG stats, update char info and bg info
+                            table_change = Table("player_bg_change", metadata, autoload=True, autoload_with=engine)
+                            stmt_update_bg_all = table.update().where(table.columns.Player_ID == bgdict.pop("Player_ID"))
+                            stmt_insert_bg_change = insert(table_change)
+                            bgChangeDict = bgChangeTuple[1]
+                            bgChangeDict["scanned_on"] = datetime.datetime.now()
+                            bgdict["active"] = True
+                            connection.execution_options(autocommit=False).execute(stmt_update_bg_all, bgdict)
+                            connection.execution_options(autocommit=False).execute(stmt_insert_bg_change, bgChangeDict)
+
                     if len(result) > 1:
                         print("\nConsitency Error!")
                         trans.rollback()

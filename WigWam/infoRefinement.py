@@ -644,8 +644,23 @@ def aggregateServerBGs(bg_dict_list, language):
 
 def calcBgChange(bgdict, result):
     result_dict = { key: result[0][key] for key in result[0].keys() }
-    if result_dict["BG_played"] == bgdict["BG_played"]: print("woar!")
-    return True
+    if result_dict["BG_played"] == bgdict["BG_played"]: return (False, 0)
+    if result_dict["BG_played"] != bgdict["BG_played"]:
+        changeDict = {}
+        for key in bgdict.keys():
+            if "most" in key: changeDict[key] = bgdict[key]
+            elif "Player_ID" in key: changeDict[key] = bgdict[key]
+            else: 
+                if bgdict[key] - result_dict[key] >= 0: changeDict[key] = bgdict[key] - result_dict[key]
+                else:
+                    if key not in {"EotS_played_def", "EotS_played_est", "EotS_won_def", "EotS_won_est", "BG_played_c", "BG_won_c"}: 
+                        changeDict[key] = 0
+                        print("Blizzard API Value Error.")
+        changeDict["scanned_before"] = result_dict["scanned_on"]
+                
+    return (True, changeDict)
+
+    
 
 #        resultlist.append({"Server_ID": 0,
 #                           "Type": dfx["Type"].iloc[0],

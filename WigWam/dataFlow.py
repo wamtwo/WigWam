@@ -388,7 +388,7 @@ if __name__ == "__main__":
 
     #print(scanServer(3))
     #print(transferAllfromServer(3, 1000, 1))
-    print(scanAllfromGeneralbyServerID(3,120, 10, 7, 3))
+    #print(scanAllfromGeneralbyServerID(3,120, 100, 7, 3))
     #print(calcStatsforServer(3))
 
     #displayServerStats("1002")
@@ -400,8 +400,8 @@ if __name__ == "__main__":
     #print(scanAllServers(language="english"))
     #print(transferAllfromAllServers(language="german"))
     #print(transferAllfromAllServers(language="English"))
-    #print(scanAllfromGeneral(language="german", days=30))
-    #print(scanAllfromGeneral(language="English", days=30))
+    print(scanAllfromGeneral(language="german", days=1))
+    print(scanAllfromGeneral(language="English", days=1))
 
     #print(calcStatsforAllServers(language="German"))
     #print(calcStatsforAllServers(language="English"))
